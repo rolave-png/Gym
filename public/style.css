@@ -47,3 +47,9 @@ nav button span{font-size:.7rem}nav button.active{color:var(--accent)}
 .bars div.over{background:#f97316}
 .bars div span{position:absolute;top:-16px;left:0;right:0;text-align:center;font-size:.65rem;color:var(--muted)}
 .bars-labels{display:flex;gap:6px;margin-top:4px}.bars-labels span{flex:1;text-align:center;font-size:.65rem;color:var(--muted)}
+
+dialog{background:var(--card);color:var(--text);border:0;border-radius:14px;width:min(92vw,480px);padding:16px}
+dialog::backdrop{background:#000a}
+#results button{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);color:var(--text);padding:9px 2px;font:inherit;cursor:pointer}
+#results small{color:var(--muted)}
+#results{max-height:35vh;overflow:auto;margin:8px 0}

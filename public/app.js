@@ -74,7 +74,39 @@ $('#photo').onchange = async (e) => {
   } catch (err) { $('#status').textContent = '⚠️ ' + err.message; }
 };
 
-$('#manualBtn').onclick = async () => {
+// ---- Buscar alimento (gratis, Open Food Facts) ----
+let picked = null, timer;
+const updKcal = () => { $('#pickKcal').textContent = picked ? Math.round(picked.kcal100 * (+$('#grams').value || 0) / 100) : 0; };
+$('#searchBtn').onclick = () => { picked = null; $('#pick').hidden = true; $('#results').innerHTML = ''; $('#q').value = ''; $('#dlg').showModal(); $('#q').focus(); };
+$('#q').oninput = () => {
+  clearTimeout(timer);
+  timer = setTimeout(async () => {
+    const q = $('#q').value.trim(); if (q.length < 2) return;
+    $('#results').innerHTML = '<p class="muted">Buscando…</p>';
+    try {
+      const foods = await api('/api/foods?q=' + encodeURIComponent(q));
+      window._foods = foods;
+      $('#results').innerHTML = foods.map((f, i) => `<button type="button" data-i="${i}">${esc(f.name)} <small>· ${f.kcal100} kcal/100g</small></button>`).join('') || '<p class="muted">Sin resultados.</p>';
+      document.querySelectorAll('#results [data-i]').forEach((b) => b.onclick = () => {
+        picked = window._foods[+b.dataset.i];
+        $('#pickName').textContent = picked.name;
+        $('#pickInfo').textContent = `${picked.kcal100} kcal · P ${picked.protein100}g · C ${picked.carbs100}g · G ${picked.fat100}g por 100 g`;
+        $('#pick').hidden = false; updKcal(); $('#grams').focus();
+      });
+    } catch (err) { $('#results').innerHTML = `<p class="muted">⚠️ ${esc(err.message)}</p>`; }
+  }, 400);
+};
+$('#grams').oninput = updKcal;
+$('#foodForm').onsubmit = async (e) => {
+  if (e.submitter?.id !== 'addFood' || !picked) return;
+  const k = (+$('#grams').value || 0) / 100;
+  await api('/api/meals', { method: 'POST', body: { date, manual: {
+    name: `${picked.name} (${$('#grams').value} g)`, calories: picked.kcal100 * k,
+    protein: picked.protein100 * k, carbs: picked.carbs100 * k, fat: picked.fat100 * k } } });
+  loadMeals();
+};
+$('#freeBtn').onclick = async () => {
+  $('#dlg').close();
   const name = prompt('¿Qué has comido?'); if (!name) return;
   const calories = prompt('Calorías aproximadas:'); if (calories === null) return;
   await api('/api/meals', { method: 'POST', body: { date, manual: { name, calories: +calories } } });
@@ -135,6 +167,6 @@ async function refresh() {
 
 (async () => {
   state = await api('/api/state');
-  if (!state.aiEnabled) $('#status').textContent = 'ℹ️ Sin ANTHROPIC_API_KEY: solo podrás añadir comidas a mano.';
+  if (!state.aiEnabled) $('#status').textContent = 'ℹ️ Sin GEMINI_API_KEY (gratis): usa «Buscar alimento» para registrar comidas.';
   refresh();
 })();

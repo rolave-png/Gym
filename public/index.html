@@ -25,7 +25,7 @@
       <h2>Añadir comida</h2>
       <div class="row">
         <label class="btn primary">📷 Hacer / subir foto<input type="file" id="photo" accept="image/*" hidden></label>
-        <button class="btn" id="manualBtn">✍️ A mano</button>
+        <button class="btn" id="searchBtn">🔎 Buscar alimento</button>
       </div>
       <input id="note" placeholder="Nota opcional (ej. 'ración grande', 'sin aceite')">
       <p id="status" class="muted"></p>
@@ -59,6 +59,18 @@
   <button data-tab="rutina">💪<span>Rutina</span></button>
   <button data-tab="progreso">📈<span>Progreso</span></button>
 </nav>
+<dialog id="dlg"><form method="dialog" id="foodForm">
+  <h2>Buscar alimento</h2>
+  <input id="q" placeholder="Ej. arroz, pollo, pizza…" autocomplete="off">
+  <div id="results"></div>
+  <div id="pick" hidden>
+    <p><b id="pickName"></b><br><small class="muted" id="pickInfo"></small></p>
+    <input id="grams" type="number" min="1" value="100" placeholder="Gramos">
+    <p>= <b id="pickKcal"></b> kcal</p>
+    <button class="btn primary" id="addFood" value="ok">Añadir</button>
+  </div>
+  <div class="row" style="margin-top:10px"><button class="btn" value="cancel">Cerrar</button><button class="btn" type="button" id="freeBtn">Poner kcal a mano</button></div>
+</form></dialog>
 <script src="app.js"></script>
 </body>
 </html>

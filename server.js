@@ -12,7 +12,8 @@ try {
 } catch {}
 
 const PORT = process.env.PORT || 3000;
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const AI_KEY = () => process.env.GEMINI_API_KEY;
 const DATA_DIR = path.join(__dirname, 'data');
 const UPLOADS = path.join(DATA_DIR, 'uploads');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
@@ -51,7 +52,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(UPLOADS));
 
 app.get('/api/state', (req, res) => {
-  res.json({ settings: db.settings, routine: db.routine, aiEnabled: !!process.env.ANTHROPIC_API_KEY });
+  res.json({ settings: db.settings, routine: db.routine, aiEnabled: !!AI_KEY() });
 });
 
 app.put('/api/settings', (req, res) => {
@@ -114,32 +115,46 @@ Responde SOLO con JSON válido, sin texto adicional, con este formato:
 Si no hay comida en la imagen, responde {"error": "No veo comida en la foto"}.`;
 
 async function analyze(image, mediaType, note) {
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-api-key': process.env.ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-    },
+    headers: { 'content-type': 'application/json', 'x-goog-api-key': AI_KEY() },
     body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 800,
-      messages: [{
-        role: 'user',
-        content: [
-          { type: 'image', source: { type: 'base64', media_type: mediaType, data: image } },
-          { type: 'text', text: PROMPT + (note ? `\nNota del usuario: ${note}` : '') },
+      contents: [{
+        parts: [
+          { inline_data: { mime_type: mediaType, data: image } },
+          { text: PROMPT + (note ? `\nNota del usuario: ${note}` : '') },
         ],
       }],
+      generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
     }),
   });
-  if (!r.ok) throw new Error(`API ${r.status}: ${(await r.text()).slice(0, 200)}`);
+  if (!r.ok) throw new Error(`Gemini ${r.status}: ${(await r.text()).slice(0, 200)}`);
   const j = await r.json();
-  const text = j.content.map((c) => c.text || '').join('');
+  const text = (j.candidates?.[0]?.content?.parts || []).map((c) => c.text || '').join('');
   const m = text.match(/\{[\s\S]*\}/);
   if (!m) throw new Error('Respuesta no interpretable');
   return JSON.parse(m[0]);
 }
+
+// Búsqueda gratuita de alimentos (Open Food Facts, sin clave)
+app.get('/api/foods', async (req, res) => {
+  const q = String(req.query.q || '').trim();
+  if (q.length < 2) return res.json([]);
+  try {
+    const url = 'https://world.openfoodfacts.org/cgi/search.pl?search_simple=1&action=process&json=1&page_size=15'
+      + '&fields=product_name,brands,nutriments&search_terms=' + encodeURIComponent(q);
+    const r = await fetch(url, { headers: { 'user-agent': 'GymTracker/1.0' }, signal: AbortSignal.timeout(10000) });
+    if (!r.ok) throw new Error('Open Food Facts ' + r.status);
+    const j = await r.json();
+    res.json((j.products || []).filter((p) => p.product_name && p.nutriments?.['energy-kcal_100g'] != null).slice(0, 10).map((p) => ({
+      name: p.brands ? `${p.product_name} (${p.brands.split(',')[0]})` : p.product_name,
+      kcal100: Math.round(p.nutriments['energy-kcal_100g']),
+      protein100: +(p.nutriments.proteins_100g || 0),
+      carbs100: +(p.nutriments.carbohydrates_100g || 0),
+      fat100: +(p.nutriments.fat_100g || 0),
+    })));
+  } catch (e) { res.status(502).json({ error: 'No se pudo buscar: ' + e.message }); }
+});
 
 app.post('/api/meals', async (req, res) => {
   try {
@@ -160,8 +175,8 @@ app.post('/api/meals', async (req, res) => {
       info = manual;
     } else {
       if (!image) return res.status(400).json({ error: 'Falta la imagen' });
-      if (!process.env.ANTHROPIC_API_KEY) {
-        return res.status(503).json({ error: 'Falta ANTHROPIC_API_KEY en el servidor. Puedes añadir la comida a mano.' });
+      if (!AI_KEY()) {
+        return res.status(503).json({ error: 'El análisis por foto necesita GEMINI_API_KEY (gratis). Mientras tanto, usa «Buscar alimento».' });
       }
       info = await analyze(image, mediaType, note);
       if (info.error) return res.status(422).json({ error: info.error });
