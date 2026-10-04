@@ -53,3 +53,6 @@ dialog::backdrop{background:#000a}
 #results button{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);color:var(--text);padding:9px 2px;font:inherit;cursor:pointer}
 #results small{color:var(--muted)}
 #results{max-height:35vh;overflow:auto;margin:8px 0}
+dialog label.muted{display:block;margin:10px 0 4px}
+dialog .row{margin-bottom:0;margin-top:10px}
+header .link{font-size:1.3rem;text-decoration:none}

@@ -5,10 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#111827">
 <title>Gym Tracker</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header><h1>🏋️ Gym Tracker</h1><input type="date" id="date"></header>
+<header><h1>🏋️ Gym Tracker</h1><input type="date" id="date"><button class="link" id="setBtn" title="Ajustes">⚙️</button></header>
 <main>
   <section id="tab-hoy">
     <div class="card summary">
@@ -32,8 +34,7 @@
     </div>
 
     <div id="meals"></div>
-    <p class="muted center"><button class="link" id="goalBtn">Cambiar objetivo de calorías</button></p>
-  </section>
+      </section>
 
   <section id="tab-rutina" hidden>
     <div class="days" id="days"></div>
@@ -71,6 +72,19 @@
   </div>
   <div class="row" style="margin-top:10px"><button class="btn" value="cancel">Cerrar</button><button class="btn" type="button" id="freeBtn">Poner kcal a mano</button></div>
 </form></dialog>
+<dialog id="setDlg"><form method="dialog" id="setForm">
+  <h2>Ajustes</h2>
+  <label class="muted">Objetivo diario (kcal)</label>
+  <input id="setGoal" type="number" min="500" max="9999">
+  <label class="muted">Clave de Gemini (gratis en aistudio.google.com/apikey)</label>
+  <input id="setKey" type="password" placeholder="Se guarda solo en este móvil" autocomplete="off">
+  <label class="muted">Modelo</label>
+  <input id="setModel" placeholder="gemini-2.5-flash">
+  <div class="row" style="margin-top:12px"><button class="btn" type="button" id="expBtn">⬇️ Exportar datos</button>
+    <label class="btn">⬆️ Importar<input type="file" id="impFile" accept="application/json" hidden></label></div>
+  <div class="row"><button class="btn" value="cancel">Cerrar</button><button class="btn primary" value="ok">Guardar</button></div>
+</form></dialog>
 <script src="app.js"></script>
+<script>if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{})</script>
 </body>
 </html>
