@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#111827">
+<title>Gym Tracker</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header><h1>🏋️ Gym Tracker</h1><input type="date" id="date"></header>
+<main>
+  <section id="tab-hoy">
+    <div class="card summary">
+      <div class="ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" class="bg"/><circle id="arc" cx="60" cy="60" r="52" class="fg"/></svg>
+        <div class="ring-text"><b id="total">0</b><small>de <span id="goal">2200</span> kcal</small></div></div>
+      <div class="macros">
+        <div><b id="mp">0</b>g<small>Proteína</small></div>
+        <div><b id="mc">0</b>g<small>Carbs</small></div>
+        <div><b id="mf">0</b>g<small>Grasa</small></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Añadir comida</h2>
+      <div class="row">
+        <label class="btn primary">📷 Hacer / subir foto<input type="file" id="photo" accept="image/*" hidden></label>
+        <button class="btn" id="manualBtn">✍️ A mano</button>
+      </div>
+      <input id="note" placeholder="Nota opcional (ej. 'ración grande', 'sin aceite')">
+      <p id="status" class="muted"></p>
+    </div>
+
+    <div id="meals"></div>
+    <p class="muted center"><button class="link" id="goalBtn">Cambiar objetivo de calorías</button></p>
+  </section>
+
+  <section id="tab-rutina" hidden>
+    <div class="days" id="days"></div>
+    <div class="card">
+      <input id="dayName" class="title-input" placeholder="Nombre del día (ej. Pecho y tríceps)">
+      <div id="exercises"></div>
+      <form id="exForm" class="exform">
+        <input id="exName" placeholder="Ejercicio" required>
+        <input id="exSets" type="number" min="1" placeholder="Series">
+        <input id="exReps" placeholder="Reps">
+        <input id="exWeight" placeholder="Kg">
+        <button class="btn primary">+</button>
+      </form>
+    </div>
+  </section>
+
+  <section id="tab-progreso" hidden>
+    <div class="card"><h2>Calorías (últimos días)</h2><div id="chart"></div></div>
+  </section>
+</main>
+<nav>
+  <button data-tab="hoy" class="active">🍽️<span>Hoy</span></button>
+  <button data-tab="rutina">💪<span>Rutina</span></button>
+  <button data-tab="progreso">📈<span>Progreso</span></button>
+</nav>
+<script src="app.js"></script>
+</body>
+</html>
