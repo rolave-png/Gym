@@ -50,7 +50,7 @@
         <button class="btn primary">+</button>
       </form>
     </div>
-    <p class="muted center"><button class="link" id="presetBtn">Cargar la rutina sugerida (3 días + bici)</button></p>
+    <p class="muted center"><button class="link" id="presetBtn">Cargar la rutina sugerida (3 días + bici)</button> · <button class="link" id="emptyBtn">Empezar una rutina vacía</button></p>
   </section>
 
   <section id="tab-progreso" hidden>
@@ -76,6 +76,12 @@
 </form></dialog>
 <datalist id="exList"></datalist>
 <dialog id="guideDlg" class="guide"><div id="guideBody"></div><button class="btn wide" id="guideClose">Cerrar</button></dialog>
+<dialog id="edDlg"><form method="dialog" id="edForm">
+  <h2>Editar ejercicio</h2>
+  <label class="muted">Nombre</label><input id="edName">
+  <div class="row3"><div><label class="muted">Series</label><input id="edSets" type="number" min="1"></div><div><label class="muted">Reps</label><input id="edReps"></div><div><label class="muted">Kg</label><input id="edWeight"></div></div>
+  <div class="row" style="margin-top:12px"><button class="btn" value="cancel">Cancelar</button><button class="btn primary" value="ok">Guardar</button></div>
+</form></dialog>
 <dialog id="setDlg"><form method="dialog" id="setForm">
   <h2>Ajustes</h2>
   <label class="muted">Objetivo diario (kcal)</label>

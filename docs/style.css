@@ -88,3 +88,9 @@ header .link{font-size:1.3rem;text-decoration:none}
 .sec{margin:14px 0 2px;font-size:.82rem;letter-spacing:.03em;color:var(--muted);text-transform:uppercase}
 .sec.warm{color:#fb923c}.sec.cool{color:#38bdf8}.sec.cardio{color:#a78bfa}
 .ex.opt .t b{font-weight:500}
+
+.tools{display:flex;flex-direction:column;line-height:1}.tools .link{font-size:.7rem;padding:1px 4px;text-decoration:none}.tools .link:disabled{opacity:.25}
+[data-edit]{text-decoration:none}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+#edDlg{background:var(--card);color:var(--text);border:0;border-radius:14px;width:min(92vw,420px);padding:16px}#edDlg::backdrop{background:#000a}
+#edDlg label{display:block;margin:10px 0 4px}

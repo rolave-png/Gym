@@ -302,6 +302,8 @@ async function loadRoutine() {
       ${canCheck ? `<input type="checkbox" data-ex="${e.id}" ${done[e.id] ? 'checked' : ''}>` : ''}
       <div class="t"><b>${esc(e.name)}</b><small>${e.sets || '-'} × ${esc(e.reps) || '-'} ${e.weight ? '· ' + esc(e.weight) + ' kg' : ''}${e.opt ? ' · opcional' : ''}</small></div>
       ${e.gid && G.EX[e.gid] ? `<button class="guide-btn" data-guide="${i}" title="Cómo se hace">▶ Guía</button>` : ''}
+      <div class="tools"><button class="link" data-up="${i}" title="Subir" ${i === 0 ? 'disabled' : ''}>▲</button><button class="link" data-down="${i}" title="Bajar" ${i === day.exercises.length - 1 ? 'disabled' : ''}>▼</button></div>
+      <button class="link" data-edit="${i}" title="Editar series, repeticiones y kilos">✏️</button>
       <button class="link" data-rm="${i}">✕</button>
     </div>`;
   }).join('') || '<p class="muted">Sin ejercicios. Añade el primero abajo.</p>';
@@ -318,8 +320,26 @@ async function loadRoutine() {
     save(); loadRoutine();
     if (c.checked && day.exercises.filter((e) => !e.opt).every((e) => db.workouts[date][e.id])) confetti();
   });
+  document.querySelectorAll('[data-up],[data-down]').forEach((b) => b.onclick = () => {
+    const i = +(b.dataset.up ?? b.dataset.down), k = b.dataset.up !== undefined ? i - 1 : i + 1;
+    [day.exercises[i], day.exercises[k]] = [day.exercises[k], day.exercises[i]]; saveDay(day);
+  });
+  document.querySelectorAll('[data-edit]').forEach((b) => b.onclick = () => {
+    const e = day.exercises[+b.dataset.edit];
+    editCtx = { day: selDay, index: +b.dataset.edit };
+    $('#edName').value = e.name; $('#edSets').value = e.sets || ''; $('#edReps').value = e.reps || ''; $('#edWeight').value = e.weight || '';
+    $('#edDlg').showModal();
+  });
   document.querySelectorAll('[data-rm]').forEach((b) => b.onclick = () => { day.exercises.splice(+b.dataset.rm, 1); saveDay(day); });
 }
+let editCtx = null;
+$('#edForm').onsubmit = (ev) => {
+  if (ev.submitter?.value !== 'ok' || !editCtx) return;
+  const e = db.routine[editCtx.day].exercises[editCtx.index];
+  e.name = $('#edName').value.trim() || e.name; e.sets = $('#edSets').value; e.reps = $('#edReps').value.trim(); e.weight = $('#edWeight').value.trim();
+  const gid = G.findId(e.name); e.gid = gid || (e.gid && G.EX[e.gid]?.name === e.name ? e.gid : undefined);
+  save(); loadRoutine();
+};
 function saveDay(day) {
   day.exercises = day.exercises.map((e) => ({ ...e, id: e.id || uid() })).filter((e) => e.name.trim());
   db.routine[selDay] = day; save(); loadRoutine();
@@ -366,6 +386,11 @@ function confetti() {
   document.body.appendChild(box); setTimeout(() => box.remove(), 3000);
 }
 
+$('#emptyBtn').onclick = () => {
+  if (!confirm('Se borrarán todos los días de tu rutina para que crees la tuya. ¿Continuar?')) return;
+  db.routine = {}; for (let d = 0; d < 7; d++) db.routine[d] = { name: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][d], exercises: [] };
+  db.supportV = 2; save(); loadRoutine();
+};
 $('#presetBtn').onclick = () => {
   if (confirm('Esto reemplaza tu rutina actual por la sugerida. ¿Continuar?')) { applyPreset(); loadRoutine(); }
 };
