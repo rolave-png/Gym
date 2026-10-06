@@ -5,7 +5,7 @@ const DEFAULT_DB = {
   settings: { goalCalories: 2200, apiKey: '', model: '' },
   routine: { 1: { name: 'Pecho y tríceps', exercises: [] }, 2: { name: 'Espalda y bíceps', exercises: [] }, 3: { name: 'Descanso', exercises: [] },
     4: { name: 'Pierna', exercises: [] }, 5: { name: 'Hombro y core', exercises: [] }, 6: { name: 'Descanso', exercises: [] }, 0: { name: 'Descanso', exercises: [] } },
-  workouts: {}, meals: [],
+  workouts: {}, meals: [], wellness: {}, reading: { book: null, log: {}, done: [] },
 };
 let db;
 try { const s = JSON.parse(localStorage.getItem(KEY)); db = s ? { ...structuredClone(DEFAULT_DB), ...s, settings: { ...DEFAULT_DB.settings, ...s.settings } } : structuredClone(DEFAULT_DB); }
@@ -61,7 +61,7 @@ $('#date').onchange = (e) => { date = e.target.value || today(); selDay = new Da
 // ---- Tabs ----
 document.querySelectorAll('nav button').forEach((b) => b.onclick = () => {
   document.querySelectorAll('nav button').forEach((x) => x.classList.toggle('active', x === b));
-  for (const t of ['hoy', 'rutina', 'progreso']) $('#tab-' + t).hidden = t !== b.dataset.tab;
+  for (const t of ['hoy', 'rutina', 'bienestar', 'progreso']) $('#tab-' + t).hidden = t !== b.dataset.tab;
   refresh();
 });
 
@@ -418,6 +418,7 @@ function loadProgress() {
 async function refresh() {
   if (!$('#tab-hoy').hidden) loadMeals();
   if (!$('#tab-rutina').hidden) loadRoutine();
+  if (!$('#tab-bienestar').hidden && window.loadWellness) window.loadWellness();
   if (!$('#tab-progreso').hidden) loadProgress();
 }
 

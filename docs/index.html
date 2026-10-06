@@ -53,6 +53,28 @@
     <p class="muted center"><button class="link" id="presetBtn">Cargar la rutina sugerida (3 días + bici)</button> · <button class="link" id="emptyBtn">Empezar una rutina vacía</button></p>
   </section>
 
+  <section id="tab-bienestar" hidden>
+    <p class="muted center" id="bDay"></p>
+    <div class="card" id="breathCard">
+      <h2>🫁 Respiración</h2>
+      <p class="muted" id="bStreak"></p>
+      <div id="bSetup">
+        <p class="muted" style="margin:0 0 6px">¿Cuándo?</p><div class="chips-row" id="bChips"></div>
+        <p class="muted" style="margin:12px 0 6px">Técnica</p><div class="pats" id="bPats"></div>
+        <p class="muted" style="margin:12px 0 6px">Duración</p><div class="chips-row" id="bMins"></div>
+        <button class="btn primary wide" id="bStart">Empezar a respirar</button>
+        <p class="center"><button class="link" data-act="toggleslot">Marcar / desmarcar este momento sin hacer la sesión</button></p>
+      </div>
+      <div id="bStage" hidden>
+        <div class="orb"><div class="orb-in" id="orb"></div><div class="orb-txt"><b id="bPhase"></b><span id="bCount"></span></div></div>
+        <p class="center muted" id="bLeft"></p>
+        <button class="btn wide" id="bStop">Terminar</button>
+      </div>
+      <p class="tip" id="bMsg" aria-live="polite"></p>
+    </div>
+    <div class="card" id="readCard"></div>
+  </section>
+
   <section id="tab-progreso" hidden>
     <div class="card"><h2>Calorías (últimos días)</h2><div id="chart"></div></div>
   </section>
@@ -60,6 +82,7 @@
 <nav>
   <button data-tab="hoy" class="active">🍽️<span>Hoy</span></button>
   <button data-tab="rutina">💪<span>Rutina</span></button>
+  <button data-tab="bienestar">🧘<span>Bienestar</span></button>
   <button data-tab="progreso">📈<span>Progreso</span></button>
 </nav>
 <dialog id="dlg"><form method="dialog" id="foodForm">
@@ -73,6 +96,16 @@
     <button class="btn primary" id="addFood" value="ok">Añadir</button>
   </div>
   <div class="row" style="margin-top:10px"><button class="btn" value="cancel">Cerrar</button><button class="btn" type="button" id="freeBtn">Poner kcal a mano</button></div>
+</form></dialog>
+<dialog id="bkDlg"><form method="dialog" id="bkForm">
+  <h2>Mi libro</h2>
+  <label class="muted">Título</label><input id="bkTitle" required>
+  <label class="muted">Autor (opcional)</label><input id="bkAuthor">
+  <div class="row3"><div><label class="muted">Páginas totales</label><input id="bkTotal" type="number" min="1" inputmode="numeric" required></div>
+    <div><label class="muted">Voy en la página</label><input id="bkNow" type="number" min="0" inputmode="numeric"></div>
+    <div><label class="muted">Meta: pág./día</label><input id="bkGoal" type="number" min="1" inputmode="numeric"></div></div>
+  <label class="muted">O quiero terminarlo antes del (opcional, calcula tu meta)</label><input id="bkTarget" type="date">
+  <div class="row" style="margin-top:12px"><button class="btn" value="cancel">Cancelar</button><button class="btn primary" value="ok">Guardar</button></div>
 </form></dialog>
 <datalist id="exList"></datalist>
 <dialog id="guideDlg" class="guide"><div id="guideBody"></div><button class="btn wide" id="guideClose">Cerrar</button></dialog>
@@ -96,6 +129,7 @@
 </form></dialog>
 <script src="guia.js"></script>
 <script src="app.js"></script>
+<script src="bienestar.js"></script>
 <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{})</script>
 </body>
 </html>
