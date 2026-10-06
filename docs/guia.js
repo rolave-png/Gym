@@ -396,7 +396,7 @@
       'Regula el asiento para que la rodilla quede casi estirada con el pedal abajo. Espalda recta.',
       ['Pedalea a un ritmo en el que puedas conversar sin ahogarte.', 'Mantén ese ritmo de 30 a 40 minutos.', 'Calienta 5 minutos suave al empezar y baja el ritmo al final.'],
       ['Ir tan fuerte que no puedes hablar (agotas y recuperas peor).', 'Encorvarte sobre el manubrio.'],
-      'Pon música o una serie. Si lo disfrutas, lo mantienes.', ['caminadora', 'trotadora']],
+      'Pon música o una serie. Si lo disfrutas, lo mantienes.', ['caminadora', 'trotadora', 'bici_intervalos']],
 
     // ---- Variantes ("si está ocupada") ----
     ['sentadilla_goblet', 'Sentadilla goblet con mancuerna', 'squat_free', 3, '10-12', 'Piernas y glúteos',
@@ -585,6 +585,30 @@
     ['Aterrizar con las piernas rígidas.', 'Ir muy rápido desde el inicio.'],
     'Versión sin salto: da un paso al lado abriendo brazos, y vuelve.', ['marcha_sitio']);
 
+
+  add('main', 'bici_intervalos', 'Bici con intervalos', 'bike', 1, '25-30 min', 'Corazón y piernas (más intensidad)',
+    'Resistencia media. Calienta 5 minutos suave antes de empezar.',
+    ['Repite 6 veces: 1 minuto fuerte (respiras agitado, pero controlas) y 2 minutos suave.', 'Termina con 3 minutos muy suaves para recuperar.', 'Total: unos 25-30 minutos.'],
+    ['Ir al máximo desde la primera repetición.', 'No descansar entre intervalos.'],
+    'Es el siguiente nivel de la bici suave: úsala cuando los 35 minutos suaves ya te resulten fáciles.', ['bici']);
+
+
+  // ---- Metadatos: grupo muscular y equipo (para explorar) y progresiones ----
+  const GRP = { prensa: 'Piernas', press_pecho_maq: 'Pecho', remo_pecho: 'Espalda', press_hombro_maq: 'Hombros', curl_femoral: 'Piernas', abdominal: 'Abdomen', jalon: 'Espalda', hip_thrust: 'Glúteos',
+    press_inc_mancuernas: 'Pecho', remo_mancuerna: 'Espalda', ext_pierna: 'Piernas', hiperext: 'Espalda', sentadilla_smith: 'Piernas', pec_deck: 'Pecho', remo_polea: 'Espalda', laterales: 'Hombros',
+    abductor: 'Glúteos', curl_biceps: 'Brazos', triceps_polea: 'Brazos', bici: 'Cardio', bici_intervalos: 'Cardio', sentadilla_goblet: 'Piernas', press_mancuernas: 'Pecho', press_pecho_smith: 'Pecho',
+    press_hombro_mancu: 'Hombros', puente_gluteo: 'Glúteos', rdl: 'Piernas', plancha: 'Abdomen', jalon_funcional: 'Espalda', laterales_polea: 'Hombros', curl_polea: 'Brazos', triceps_cuerda: 'Brazos',
+    cruce_polea: 'Pecho', aperturas_mancuernas: 'Pecho', caminadora: 'Cardio', trotadora: 'Cardio', flexiones: 'Pecho', flexiones_rodillas: 'Pecho', flexiones_inclinadas: 'Pecho', zancadas: 'Piernas',
+    puente_suelo: 'Glúteos', superman: 'Espalda', abdominal_suelo: 'Abdomen', elevacion_talones: 'Piernas' };
+  // equipo: maq = máquina o polea del gimnasio, man = mancuernas, peso = sin equipo, bici, cinta
+  const EQ = { prensa: 'maq', press_pecho_maq: 'maq', remo_pecho: 'maq', press_hombro_maq: 'maq', curl_femoral: 'maq', abdominal: 'peso', jalon: 'maq', hip_thrust: 'maq', press_inc_mancuernas: 'man', remo_mancuerna: 'man',
+    ext_pierna: 'maq', hiperext: 'maq', sentadilla_smith: 'maq', pec_deck: 'maq', remo_polea: 'maq', laterales: 'man', abductor: 'maq', curl_biceps: 'man', triceps_polea: 'maq', bici: 'bici', bici_intervalos: 'bici',
+    sentadilla_goblet: 'man', press_mancuernas: 'man', press_pecho_smith: 'maq', press_hombro_mancu: 'man', puente_gluteo: 'man', rdl: 'man', plancha: 'peso', jalon_funcional: 'maq', laterales_polea: 'maq',
+    curl_polea: 'maq', triceps_cuerda: 'maq', cruce_polea: 'maq', aperturas_mancuernas: 'man', caminadora: 'cinta', trotadora: 'cinta', cal_cinta: 'cinta', cal_bici: 'bici' };
+  for (const id in EX) { const e = EX[id]; e.grp = GRP[id] || (e.sec === 'warm' || e.sec === 'cool' ? 'Movilidad' : 'Piernas'); e.eq = EQ[id] || 'peso'; }
+  const HARDER = { flexiones_inclinadas: 'flexiones_rodillas', flexiones_rodillas: 'flexiones', puente_suelo: 'puente_gluteo', abdominal_suelo: 'plancha', abdominal: 'plancha', bici: 'bici_intervalos', sentadilla_goblet: 'zancadas', jalon_funcional: 'jalon' };
+  const EASIER = {}; for (const k in HARDER) if (!EASIER[HARDER[k]]) EASIER[HARDER[k]] = k;
+
   const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
   const byName = {};
   for (const id in EX) byName[norm(EX[id].name)] = id;
@@ -629,5 +653,5 @@
     return () => cancelAnimationFrame(raf);
   }
 
-  window.GUIA = { EX, P, drawPose, findId, mount, norm };
+  window.GUIA = { EX, P, drawPose, findId, mount, norm, HARDER, EASIER };
 })();

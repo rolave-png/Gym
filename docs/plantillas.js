@@ -51,6 +51,19 @@
         S('Día 1 · Bici + core', ['bici', 'plancha', 'abdominal_suelo', 'superman']),
         S('Día 2 · Bici + piernas', ['bici', 'puente_suelo', 'elevacion_talones', 'plancha']),
         S('Día 3 · Bici + core', ['bici', 'abdominal_suelo', 'superman', 'plancha'])] },
+    { id: 'home1b', where: 'home', name: 'Casa con mancuernas · nivel 2 · 4 días', level: 'Intermedio', days: [1, 2, 4, 5],
+      desc: 'Para cuando la rutina de 3 días ya te resulta fácil. Dos días de piernas y dos de torso, con mancuernas.',
+      sessions: [
+        S('Piernas A', ['sentadilla_goblet', 'zancadas', 'rdl', 'puente_gluteo', 'elevacion_talones']),
+        S('Torso A', ['press_mancuernas', 'remo_mancuerna', 'press_hombro_mancu', 'curl_biceps', 'plancha']),
+        S('Piernas B', ['zancadas', 'sentadilla_goblet', 'puente_gluteo', 'rdl', 'abdominal_suelo']),
+        S('Torso B', ['flexiones_rodillas', 'remo_mancuerna', 'laterales', 'press_mancuernas', 'curl_biceps', 'superman'])] },
+    { id: 'home2b', where: 'home', name: 'Bici con intervalos y core · 3 días', level: 'Intermedio', days: [1, 3, 5],
+      desc: 'El siguiente paso de la bici estática: intervalos para quemar más, más trabajo de abdomen y espalda.',
+      sessions: [
+        S('Día 1 · Intervalos + core', ['bici_intervalos', 'plancha', 'abdominal_suelo']),
+        S('Día 2 · Bici suave + piernas', ['bici', 'puente_suelo', 'zancadas', 'elevacion_talones']),
+        S('Día 3 · Intervalos + espalda', ['bici_intervalos', 'superman', 'plancha'])] },
   ];
 
   let filter = 'all', pick = null, chosen = [];
@@ -108,7 +121,12 @@
       <p class="muted center">Reemplaza la rutina que tienes ahora.</p>`;
   }
 
-  function open() { filter = 'all'; pick = null; list(); q('#tplDlg').showModal(); q('#tplDlg').scrollTop = 0; }
+  function apply(tpl, days, o) {
+    db.routine = build(tpl, days, o); db.supportV = 2; db.lastAdjust = new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10); save();
+    selDay = days[0]; loadRoutine();
+  }
+
+  function open(f) { filter = typeof f === 'string' ? f : 'all'; pick = null; list(); q('#tplDlg').showModal(); q('#tplDlg').scrollTop = 0; }
 
   document.addEventListener('click', (e) => {
     const dlg = q('#tplDlg'); if (!dlg || !dlg.open) return;
@@ -124,13 +142,13 @@
     } else if (t.id === 'tplUse') {
       const tpl = TEMPLATES.find((x) => x.id === pick);
       if (!confirm('Se reemplazará tu rutina actual por «' + tpl.name + '». ¿Continuar?')) return;
-      db.routine = build(tpl, [...chosen].sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b)), { warm: q('#oWarm').checked, cool: q('#oCool').checked, bike: q('#oBike').checked && !q('#oBike').disabled, treadmill: q('#oTread')?.checked });
-      db.supportV = 2; save();
-      selDay = chosen.slice().sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b))[0];
-      dlg.close(); loadRoutine();
+      const days = [...chosen].sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b));
+      apply(tpl, days, { warm: q('#oWarm').checked, cool: q('#oCool').checked, bike: q('#oBike').checked && !q('#oBike').disabled, treadmill: q('#oTread')?.checked });
+      dlg.close();
     } else if (t.id === 'tplClose') dlg.close();
   });
 
-  q('#tplBtn').onclick = open;
+  q('#tplBtn').onclick = () => open();
+  window.openCatalog = open;
   window.GYM_TEMPLATES = TEMPLATES;
 })();

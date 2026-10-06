@@ -7,6 +7,7 @@ const DEFAULT_DB = {
     4: { name: 'Pierna', exercises: [] }, 5: { name: 'Hombro y core', exercises: [] }, 6: { name: 'Descanso', exercises: [] }, 0: { name: 'Descanso', exercises: [] } },
   workouts: {}, meals: [], wellness: {}, reading: { book: null, log: {}, done: [] },
 };
+const hadData = !!localStorage.getItem(KEY);
 let db;
 try { const s = JSON.parse(localStorage.getItem(KEY)); db = s ? { ...structuredClone(DEFAULT_DB), ...s, settings: { ...DEFAULT_DB.settings, ...s.settings } } : structuredClone(DEFAULT_DB); }
 catch { db = structuredClone(DEFAULT_DB); }
@@ -15,6 +16,8 @@ function save() {
   catch { alert('No hay espacio para guardar. Exporta tus datos y borra comidas antiguas.'); }
 }
 if (db.settings.model === 'gemini-2.5-flash') db.settings.model = '';
+if (db.onboarded === undefined) db.onboarded = hadData; // quien ya usaba la app no ve la bienvenida
+if (!db.lastAdjust) db.lastAdjust = new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
 const uid = () => Math.random().toString(36).slice(2, 10);
 const n0 = (v) => Math.max(0, Math.round(Number(v) || 0));
 
@@ -35,7 +38,7 @@ const PRESET = {
   0: { name: 'Descanso', exercises: [] },
 };
 function applyPreset() {
-  db.routine = {}; db.supportV = 2;
+  db.routine = {}; db.supportV = 2; db.lastAdjust = new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
   for (const [d, day] of Object.entries(PRESET)) db.routine[d] = { name: day.name, exercises: day.exercises.map((e) => ({ ...e, id: uid() })) };
   save();
 }
@@ -267,7 +270,7 @@ $('#setForm').onsubmit = (e) => {
   db.settings.model = $('#setModel').value.trim();
   save(); refresh(); updateStatus();
 };
-$('#expBtn').onclick = () => {
+$('#expBtn2').onclick = () => {
   const copy = { ...db, settings: { ...db.settings, apiKey: '' } }; // la clave no se exporta
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(copy)], { type: 'application/json' }));
@@ -286,6 +289,7 @@ $('#impFile').onchange = async (e) => {
 
 // ---- Rutina ----
 async function loadRoutine() {
+  if (window.updateWeekBanner) window.updateWeekBanner();
   $('#days').innerHTML = DAYS.map((d, i) => `<button data-d="${i}" class="${i === selDay ? 'active' : ''}">${d}</button>`).join('');
   document.querySelectorAll('#days button').forEach((b) => b.onclick = () => { selDay = +b.dataset.d; loadRoutine(); });
   const day = db.routine[selDay] || { name: '', exercises: [] };
@@ -345,6 +349,16 @@ function saveDay(day) {
   db.routine[selDay] = day; save(); loadRoutine();
 }
 // ---- Guía de ejercicio (animación, pasos y alternativas) ----
+// Inserta un ejercicio de la biblioteca en su sección (calentamiento, entrenamiento, cardio o estiramientos)
+function insertExercise(day, gid) {
+  const l = G.EX[gid], rank = (s) => ({ warm: 0, main: 1, cardio: 2, cool: 3 })[s || 'main'], r = rank(l.sec);
+  const d = (db.routine[day] = db.routine[day] || { name: 'Entrenamiento', exercises: [] });
+  if (!d.exercises.length || d.name === 'Descanso') d.name = d.exercises.length ? d.name : 'Entrenamiento';
+  const item = { id: uid(), gid, name: l.name, sets: l.sets, reps: l.reps, weight: '', sec: l.sec === 'main' ? undefined : l.sec, opt: l.sec === 'cardio' || undefined };
+  const at = d.exercises.reduce((acc, e, i) => (rank(e.sec) <= r ? i : acc), -1) + 1;
+  d.exercises.splice(at, 0, item); save();
+  if (!$('#tab-rutina').hidden) loadRoutine();
+}
 let stopAnim = () => {}, guideCtx = null;
 function openGuide(gid, ctx, origin) {
   const e = G.EX[gid]; if (!e) return;
@@ -363,10 +377,13 @@ function openGuide(gid, ctx, origin) {
     <p class="tip">💡 ${esc(e.tip)}</p>
     ${alts.length ? `<h3>🔁 ¿Está ocupada? Prueba esto</h3><div class="alts">${alts.map((a) => `<button class="alt" data-alt="${a.id}"><b>${esc(a.name)}</b><small>${esc(a.muscles)}</small></button>`).join('')}</div>` : ''}
     ${gid !== orig ? `<p class="center"><button class="link" data-back="${orig}">↩ Volver a ${esc(G.EX[orig].name)}</button></p>` : ''}
-    ${guideCtx && gid !== (db.routine[guideCtx.day]?.exercises[guideCtx.index]?.gid) ? `<button class="btn primary wide" id="useAlt">Usar esta en mi rutina</button>` : ''}`;
+    ${guideCtx && guideCtx.index !== undefined && gid !== (db.routine[guideCtx.day]?.exercises[guideCtx.index]?.gid) ? `<button class="btn primary wide" id="useAlt">Usar esta en mi rutina</button>` : ''}
+    ${guideCtx && guideCtx.add ? `<h3>➕ Agregar a mi rutina</h3><div class="addrow"><select id="addDay">${[1, 2, 3, 4, 5, 6, 0].map((d) => `<option value="${d}" ${d === selDay ? 'selected' : ''}>${['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][d]}${db.routine[d]?.exercises?.length ? ' · ' + esc(db.routine[d].name) : ' · libre'}</option>`).join('')}</select><button class="btn primary" id="addToDay">Agregar</button></div>` : ''}`;
   stopAnim = G.mount($('#gSvg'), $('#gLabel'), e.pat);
   document.querySelectorAll('[data-alt]').forEach((b) => b.onclick = () => { openGuide(b.dataset.alt, guideCtx, orig); $('#guideDlg').scrollTop = 0; });
   document.querySelectorAll('[data-back]').forEach((b) => b.onclick = () => { openGuide(b.dataset.back, guideCtx); $('#guideDlg').scrollTop = 0; });
+  const addB = $('#addToDay');
+  if (addB) addB.onclick = () => { const d = +$('#addDay').value; insertExercise(d, gid); $('#guideDlg').close(); if (window.toastMsg) window.toastMsg('✅ Agregado a ' + ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][d]); };
   const use = $('#useAlt');
   if (use) use.onclick = () => {
     const slot = db.routine[guideCtx.day].exercises[guideCtx.index];
@@ -389,7 +406,7 @@ function confetti() {
 $('#emptyBtn').onclick = () => {
   if (!confirm('Se borrarán todos los días de tu rutina para que crees la tuya. ¿Continuar?')) return;
   db.routine = {}; for (let d = 0; d < 7; d++) db.routine[d] = { name: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][d], exercises: [] };
-  db.supportV = 2; save(); loadRoutine();
+  db.supportV = 2; db.lastAdjust = new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10); save(); loadRoutine();
 };
 $('#presetBtn').onclick = () => {
   if (confirm('Esto reemplaza tu rutina actual por la sugerida. ¿Continuar?')) { applyPreset(); loadRoutine(); }

@@ -38,6 +38,7 @@
 
   <section id="tab-rutina" hidden>
     <div class="days" id="days"></div>
+    <div id="weekBanner" class="banner" hidden><span>📆 Ya pasó una semana. ¿Cómo te fue? Ajustemos tu rutina.</span><button class="btn primary" id="weekBannerBtn">Ajustar</button></div>
     <div id="progress" class="progress" hidden><div class="track"><div id="progBar"></div></div><p id="progText" class="muted"></p></div>
     <div class="card">
       <input id="dayName" class="title-input" placeholder="Nombre del día (ej. Pecho y tríceps)">
@@ -50,7 +51,7 @@
         <button class="btn primary">+</button>
       </form>
     </div>
-    <p class="muted center"><button class="btn primary" id="tplBtn">📚 Elegir otra rutina</button></p>
+    <p class="center actions"><button class="btn primary" id="tplBtn">📚 Elegir otra rutina</button> <button class="btn" id="expBtn">🔍 Explorar ejercicios</button> <button class="btn" id="wkBtn">🔄 Ajustar mi semana</button></p>
     <p class="muted center"><button class="link" id="presetBtn">Cargar la rutina sugerida (3 días + bici)</button> · <button class="link" id="emptyBtn">Empezar una rutina vacía</button></p>
   </section>
 
@@ -110,6 +111,36 @@
 </form></dialog>
 <datalist id="exList"></datalist>
 <dialog id="guideDlg" class="guide"><div id="guideBody"></div><button class="btn wide" id="guideClose">Cerrar</button></dialog>
+<dialog id="expDlg" class="guide"><div id="expBody">
+  <h2>🔍 Explorar ejercicios</h2>
+  <p class="muted">Todos con animación. Toca uno para verlo y agregarlo a tu rutina.</p>
+  <input id="expQ" placeholder="Buscar: sentadilla, espalda, bíceps…" autocomplete="off">
+  <p class="muted lbl">¿Con qué cuentas?</p><div class="chips-row" id="expPlace"></div>
+  <p class="muted lbl">Músculo</p><div class="chips-row" id="expGrp"></div>
+  <p class="muted" id="expCount"></p><div class="xlist" id="expList"></div>
+</div><button class="btn wide" id="expClose">Cerrar</button></dialog>
+<dialog id="wkDlg" class="guide"><div id="wkBody">
+  <h2>🔄 Ajustar mi semana</h2>
+  <div id="wkChoices"><p>¿Cómo se sintió la última semana de entrenamiento? Según tu respuesta, subo o bajo un poco la dificultad.</p>
+    <div class="wk">
+      <button class="wkbtn" data-wk="up"><b>💪 Fue fácil</b><small>Sube series o pasa a una versión más difícil</small></button>
+      <button class="wkbtn" data-wk="same"><b>👌 Estuvo bien</b><small>Mantengo todo igual</small></button>
+      <button class="wkbtn" data-wk="down"><b>🥵 Fue muy difícil</b><small>Bajo series o paso a una versión más fácil</small></button>
+    </div>
+    <p class="muted">Consejo: si completaste todas las series y repeticiones con buena técnica, elige «fue fácil». Si no pudiste terminar o te dolió algo, elige «muy difícil». Siempre puedes corregir un ejercicio con ✏️.</p></div>
+  <div id="wkResult" hidden></div>
+</div><button class="btn wide" id="wkClose">Cerrar</button></dialog>
+<dialog id="welDlg" class="guide"><div>
+  <h2>👋 ¡Hola! Armemos tu rutina</h2>
+  <p>Esta app te ayuda a entrenar con una rutina a tu medida: ejercicios animados, calentamiento, estiramientos, respiración y lectura.</p>
+  <p><b>¿Dónde vas a entrenar?</b> Elige y te muestro rutinas para ti. Después puedes cambiarlas cuando quieras.</p>
+  <div class="wk">
+    <button class="wkbtn" data-wel="gym"><b>🏋️ En el gimnasio</b><small>Máquinas, mancuernas y poleas</small></button>
+    <button class="wkbtn" data-wel="home"><b>🏠 En casa con mancuernas y bici</b><small>Rutinas con lo que ya tienes</small></button>
+    <button class="wkbtn" data-wel="home0"><b>🙌 En casa sin equipo</b><small>Solo con tu peso corporal</small></button>
+  </div>
+  <p class="center"><button class="link" data-wel="later">Más tarde</button></p>
+</div></dialog>
 <dialog id="tplDlg" class="guide"><div id="tplBody"></div><button class="btn wide" id="tplClose">Cerrar</button></dialog>
 <dialog id="edDlg"><form method="dialog" id="edForm">
   <h2>Editar ejercicio</h2>
@@ -125,7 +156,8 @@
   <input id="setKey" type="password" placeholder="Se guarda solo en este móvil" autocomplete="off">
   <label class="muted">Modelo (déjalo vacío para elegir automáticamente)</label>
   <input id="setModel" placeholder="automático">
-  <div class="row" style="margin-top:12px"><button class="btn" type="button" id="expBtn">⬇️ Exportar datos</button>
+  <button class="btn wide-btn" type="button" id="shareBtn">📤 Compartir esta app</button>
+  <div class="row" style="margin-top:12px"><button class="btn" type="button" id="expBtn2">⬇️ Exportar datos</button>
     <label class="btn">⬆️ Importar<input type="file" id="impFile" accept="application/json" hidden></label></div>
   <div class="row"><button class="btn" value="cancel">Cerrar</button><button class="btn primary" value="ok">Guardar</button></div>
 </form></dialog>
@@ -133,6 +165,7 @@
 <script src="app.js"></script>
 <script src="bienestar.js"></script>
 <script src="plantillas.js"></script>
+<script src="explorar.js"></script>
 <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{})</script>
 </body>
 </html>
