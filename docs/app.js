@@ -2,7 +2,7 @@ const $ = (s) => document.querySelector(s);
 // ---- Almacenamiento local (todo se guarda en este dispositivo) ----
 const KEY = 'gym-tracker-v1';
 const DEFAULT_DB = {
-  settings: { goalCalories: 2200, apiKey: '', model: 'gemini-2.5-flash' },
+  settings: { goalCalories: 2200, apiKey: '', model: '' },
   routine: { 1: { name: 'Pecho y tríceps', exercises: [] }, 2: { name: 'Espalda y bíceps', exercises: [] }, 3: { name: 'Descanso', exercises: [] },
     4: { name: 'Pierna', exercises: [] }, 5: { name: 'Hombro y core', exercises: [] }, 6: { name: 'Descanso', exercises: [] }, 0: { name: 'Descanso', exercises: [] } },
   workouts: {}, meals: [],
@@ -14,6 +14,7 @@ function save() {
   try { localStorage.setItem(KEY, JSON.stringify(db)); }
   catch { alert('No hay espacio para guardar. Exporta tus datos y borra comidas antiguas.'); }
 }
+if (db.settings.model === 'gemini-2.5-flash') db.settings.model = '';
 const uid = () => Math.random().toString(36).slice(2, 10);
 const n0 = (v) => Math.max(0, Math.round(Number(v) || 0));
 
@@ -78,9 +79,25 @@ Responde SOLO con JSON válido, sin texto adicional, con este formato:
 {"name": "nombre breve del plato en español", "calories": número, "protein": gramos, "carbs": gramos, "fat": gramos, "items": [{"name": "alimento", "calories": número}], "notes": "supuestos sobre la porción, máx. 1 frase"}
 Si no hay comida en la imagen, responde {"error": "No veo comida en la foto"}.`;
 
-async function analyze(base64, note) {
-  const model = db.settings.model || 'gemini-2.5-flash';
-  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+const GEM = 'https://generativelanguage.googleapis.com/v1beta/';
+
+// Elige un modelo "flash" disponible para esta clave (los nombres cambian con el tiempo)
+async function detectModel() {
+  const r = await fetch(GEM + 'models?pageSize=200', { headers: { 'x-goog-api-key': db.settings.apiKey } });
+  if (!r.ok) throw new Error(`No se pudo listar modelos (${r.status}). Revisa la clave en Ajustes.`);
+  const list = (await r.json()).models || [];
+  const ver = (n) => parseFloat((n.match(/gemini-(\d+(?:\.\d+)?)/) || [])[1]) || 0;
+  const ok = list
+    .filter((m) => (m.supportedGenerationMethods || []).includes('generateContent'))
+    .map((m) => m.name.replace('models/', ''))
+    .filter((n) => /^gemini-[\d.]+-flash/.test(n) && !/(lite|image|tts|live|audio|thinking|embedding|exp|robotics|computer|learnlm)/.test(n));
+  if (!ok.length) throw new Error('Tu clave no tiene modelos Gemini Flash disponibles.');
+  ok.sort((a, b) => ver(b) - ver(a) || (/preview/.test(a) - /preview/.test(b)) || a.length - b.length);
+  return ok[0];
+}
+
+async function callGemini(model, base64, note) {
+  return fetch(`${GEM}models/${encodeURIComponent(model)}:generateContent`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-goog-api-key': db.settings.apiKey },
     body: JSON.stringify({
@@ -88,7 +105,18 @@ async function analyze(base64, note) {
       generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
     }),
   });
-  if (!r.ok) throw new Error(`Gemini ${r.status}: ${(await r.text()).slice(0, 160)}`);
+}
+
+async function analyze(base64, note) {
+  let model = db.settings.model;
+  if (!model) { model = await detectModel(); db.settings.model = model; save(); }
+  let r = await callGemini(model, base64, note);
+  if (r.status === 404 || r.status === 400 && !(await r.clone().text()).includes('API key')) {
+    // El modelo guardado ya no existe para esta clave: buscar otro y reintentar una vez
+    const alt = await detectModel();
+    if (alt !== model) { model = alt; db.settings.model = alt; save(); r = await callGemini(model, base64, note); }
+  }
+  if (!r.ok) throw new Error(`Gemini ${r.status}: ${(await r.text()).slice(0, 200)}`);
   const j = await r.json();
   const text = (j.candidates?.[0]?.content?.parts || []).map((c) => c.text || '').join('');
   const m = text.match(/\{[\s\S]*\}/);
@@ -185,7 +213,7 @@ $('#setForm').onsubmit = (e) => {
   const g = +$('#setGoal').value;
   if (g > 0) db.settings.goalCalories = Math.round(g);
   db.settings.apiKey = $('#setKey').value.trim();
-  db.settings.model = $('#setModel').value.trim() || 'gemini-2.5-flash';
+  db.settings.model = $('#setModel').value.trim();
   save(); refresh(); updateStatus();
 };
 $('#expBtn').onclick = () => {
