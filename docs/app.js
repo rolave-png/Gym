@@ -82,17 +82,36 @@ async function loadMeals() {
       ${m.photo ? `<img src="${m.photo}" alt="">` : '<div class="ph">🍴</div>'}
       <div class="info"><b>${esc(m.name)}</b><small>${m.time} · P ${m.protein}g · C ${m.carbs}g · G ${m.fat}g</small>
         ${m.items.length || m.notes ? `<details><summary>Detalle</summary><small>${m.items.map((i) => `${esc(i.name)} (${i.calories})`).join(', ')}${m.notes ? '<br>' + esc(m.notes) : ''}</small></details>` : ''}</div>
-      <div class="kcal" data-id="${m.id}" title="Toca para corregir">${m.calories} kcal</div>
+      <div class="kcal" data-id="${m.id}" title="Toca para corregir">${m.calories} kcal${m.edited ? '<small class="edited">✏️ editado</small>' : ''}</div>
+      <button class="x" data-edit-meal="${m.id}" title="Editar esta comida">✏️</button>
       <button class="x" data-del="${m.id}">✕</button>
     </div>`).join('') || '<p class="muted center">Aún no has registrado comidas hoy.</p>';
   document.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
     if (confirm('¿Borrar esta comida?')) { db.meals = db.meals.filter((m) => m.id !== b.dataset.del); save(); loadMeals(); }
   });
-  document.querySelectorAll('.kcal').forEach((k) => k.onclick = async () => {
-    const v = prompt('Calorías correctas:', parseInt(k.textContent));
-    if (v && +v >= 0) { db.meals.find((m) => m.id === k.dataset.id).calories = n0(v); save(); loadMeals(); }
-  });
+  document.querySelectorAll('.kcal').forEach((k) => k.onclick = () => openMealEditor(k.dataset.id));
+  document.querySelectorAll('[data-edit-meal]').forEach((b) => b.onclick = () => openMealEditor(b.dataset.editMeal));
 }
+
+// ---- Corregir una comida a mano (cuando la foto se equivoca) ----
+let mealEdit = null;
+function openMealEditor(id) {
+  const m = db.meals.find((x) => x.id === id); if (!m) return;
+  mealEdit = { id, kcal: m.calories, p: m.protein, c: m.carbs, f: m.fat };
+  $('#mdName').value = m.name; $('#mdKcal').value = m.calories; $('#mdP').value = m.protein; $('#mdC').value = m.carbs; $('#mdF').value = m.fat;
+  $('#mdScale').checked = true; $('#mealDlg').showModal();
+}
+$('#mdForm').onsubmit = (ev) => {
+  if (ev.submitter?.value !== 'ok' || !mealEdit) return;
+  const m = db.meals.find((x) => x.id === mealEdit.id); if (!m) return;
+  const kcal = n0($('#mdKcal').value), p = n0($('#mdP').value), c = n0($('#mdC').value), f = n0($('#mdF').value);
+  const macrosTouched = p !== mealEdit.p || c !== mealEdit.c || f !== mealEdit.f;
+  if ($('#mdScale').checked && !macrosTouched && kcal !== mealEdit.kcal && mealEdit.kcal > 0) { // solo cambiaron las kcal: ajusta los macros en proporción
+    const k = kcal / mealEdit.kcal; m.protein = n0(mealEdit.p * k); m.carbs = n0(mealEdit.c * k); m.fat = n0(mealEdit.f * k);
+  } else { m.protein = p; m.carbs = c; m.fat = f; }
+  m.name = $('#mdName').value.trim().slice(0, 80) || m.name; m.calories = kcal; m.edited = true;
+  save(); loadMeals();
+};
 
 // Lee la foto por el camino más compatible: createImageBitmap, y si no, <img>
 async function decodeImage(file) {

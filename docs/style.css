@@ -145,3 +145,6 @@ nav button span{font-size:.65rem}
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#14532d;color:#fff;padding:10px 16px;border-radius:99px;z-index:60;max-width:90vw;text-align:center}
 #expQ{margin-top:6px}
 [hidden]{display:none!important}
+
+#mealDlg{background:var(--card);color:var(--text);border:0;border-radius:14px;width:min(92vw,440px);padding:16px}#mealDlg::backdrop{background:#000a}#mealDlg label.muted{display:block;margin:10px 0 4px}
+.kcal{text-align:right}.kcal .edited{display:block;font-weight:400;font-size:.7rem;color:var(--muted)}
