@@ -18,6 +18,34 @@ if (db.settings.model === 'gemini-2.5-flash') db.settings.model = '';
 const uid = () => Math.random().toString(36).slice(2, 10);
 const n0 = (v) => Math.max(0, Math.round(Number(v) || 0));
 
+// ---- Rutina sugerida (3 días de cuerpo completo + bici), según las máquinas del gimnasio ----
+const ex = (name, sets, reps) => ({ name, sets, reps, weight: '' });
+const PRESET = {
+  1: { name: 'Día 1 · Cuerpo completo A', exercises: [
+    ex('Prensa / sentadilla hack (discos)', 3, '10-12'), ex('Press de pecho en máquina (discos)', 3, '10-12'),
+    ex('Remo sentado con apoyo de pecho', 3, '10-12'), ex('Press de hombro en máquina', 3, '10-12'),
+    ex('Curl de pierna (isquios)', 3, '12'), ex('Abdominal en banca', 3, '15') ] },
+  2: { name: 'Bicicleta estática (casa)', exercises: [ ex('Bici suave 30-40 min (puedes hablar)', 1, '35 min') ] },
+  3: { name: 'Día 2 · Cuerpo completo B', exercises: [
+    ex('Jalón al pecho', 3, '10-12'), ex('Hip thrust en máquina', 3, '10-12'),
+    ex('Press inclinado con mancuernas', 3, '10-12'), ex('Remo a una mano con mancuerna', 3, '10-12 c/lado'),
+    ex('Extensión de pierna (cuádriceps)', 3, '12-15'), ex('Hiperextensión 45° (espalda baja)', 3, '12') ] },
+  4: { name: 'Descanso', exercises: [] },
+  5: { name: 'Día 3 · Cuerpo completo C', exercises: [
+    ex('Sentadilla en máquina Smith', 3, '10-12'), ex('Aperturas en pec deck', 3, '12-15'),
+    ex('Remo bajo en polea', 3, '10-12'), ex('Elevaciones laterales con mancuernas', 3, '12-15'),
+    ex('Abductor / aductor', 3, '15'), ex('Curl de bíceps con mancuernas', 2, '12'),
+    ex('Tríceps en polea', 2, '12'), ex('Abdominal en banca', 3, '15') ] },
+  6: { name: 'Bicicleta estática (casa)', exercises: [ ex('Bici suave 30-40 min (puedes hablar)', 1, '35 min') ] },
+  0: { name: 'Descanso', exercises: [] },
+};
+function applyPreset() {
+  db.routine = {};
+  for (const [d, day] of Object.entries(PRESET)) db.routine[d] = { name: day.name, exercises: day.exercises.map((e) => ({ ...e, id: uid() })) };
+  save();
+}
+if (Object.values(db.routine).every((d) => !d.exercises?.length)) applyPreset(); // primera vez: cargar la sugerida
+
 const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -277,6 +305,9 @@ function saveDay(day) {
   day.exercises = day.exercises.map((e) => ({ ...e, id: e.id || uid() })).filter((e) => e.name.trim());
   db.routine[selDay] = day; save(); loadRoutine();
 }
+$('#presetBtn').onclick = () => {
+  if (confirm('Esto reemplaza tu rutina actual por la sugerida. ¿Continuar?')) { applyPreset(); loadRoutine(); }
+};
 $('#dayName').onchange = (e) => saveDay({ ...(db.routine[selDay] || { exercises: [] }), name: e.target.value });
 $('#exForm').onsubmit = (e) => {
   e.preventDefault();
