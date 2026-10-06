@@ -19,24 +19,15 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 const n0 = (v) => Math.max(0, Math.round(Number(v) || 0));
 
 // ---- Rutina sugerida (3 días de cuerpo completo + bici), según las máquinas del gimnasio ----
-const ex = (name, sets, reps) => ({ name, sets, reps, weight: '' });
+const G = window.GUIA;
+const ex = (id) => ({ gid: id, name: G.EX[id].name, sets: G.EX[id].sets, reps: G.EX[id].reps, weight: '' });
 const PRESET = {
-  1: { name: 'Día 1 · Cuerpo completo A', exercises: [
-    ex('Prensa / sentadilla hack (discos)', 3, '10-12'), ex('Press de pecho en máquina (discos)', 3, '10-12'),
-    ex('Remo sentado con apoyo de pecho', 3, '10-12'), ex('Press de hombro en máquina', 3, '10-12'),
-    ex('Curl de pierna (isquios)', 3, '12'), ex('Abdominal en banca', 3, '15') ] },
-  2: { name: 'Bicicleta estática (casa)', exercises: [ ex('Bici suave 30-40 min (puedes hablar)', 1, '35 min') ] },
-  3: { name: 'Día 2 · Cuerpo completo B', exercises: [
-    ex('Jalón al pecho', 3, '10-12'), ex('Hip thrust en máquina', 3, '10-12'),
-    ex('Press inclinado con mancuernas', 3, '10-12'), ex('Remo a una mano con mancuerna', 3, '10-12 c/lado'),
-    ex('Extensión de pierna (cuádriceps)', 3, '12-15'), ex('Hiperextensión 45° (espalda baja)', 3, '12') ] },
+  1: { name: 'Día 1 · Cuerpo completo A', exercises: ['prensa', 'press_pecho_maq', 'remo_pecho', 'press_hombro_maq', 'curl_femoral', 'abdominal'].map(ex) },
+  2: { name: 'Bicicleta estática (casa)', exercises: [ex('bici')] },
+  3: { name: 'Día 2 · Cuerpo completo B', exercises: ['jalon', 'hip_thrust', 'press_inc_mancuernas', 'remo_mancuerna', 'ext_pierna', 'hiperext'].map(ex) },
   4: { name: 'Descanso', exercises: [] },
-  5: { name: 'Día 3 · Cuerpo completo C', exercises: [
-    ex('Sentadilla en máquina Smith', 3, '10-12'), ex('Aperturas en pec deck', 3, '12-15'),
-    ex('Remo bajo en polea', 3, '10-12'), ex('Elevaciones laterales con mancuernas', 3, '12-15'),
-    ex('Abductor / aductor', 3, '15'), ex('Curl de bíceps con mancuernas', 2, '12'),
-    ex('Tríceps en polea', 2, '12'), ex('Abdominal en banca', 3, '15') ] },
-  6: { name: 'Bicicleta estática (casa)', exercises: [ ex('Bici suave 30-40 min (puedes hablar)', 1, '35 min') ] },
+  5: { name: 'Día 3 · Cuerpo completo C', exercises: ['sentadilla_smith', 'pec_deck', 'remo_polea', 'laterales', 'abductor', 'curl_biceps', 'triceps_polea', 'abdominal'].map(ex) },
+  6: { name: 'Bicicleta estática (casa)', exercises: [ex('bici')] },
   0: { name: 'Descanso', exercises: [] },
 };
 function applyPreset() {
@@ -45,6 +36,7 @@ function applyPreset() {
   save();
 }
 if (Object.values(db.routine).every((d) => !d.exercises?.length)) applyPreset(); // primera vez: cargar la sugerida
+for (const d of Object.values(db.routine)) for (const e of d.exercises || []) if (!e.gid) e.gid = G.findId(e.name) || undefined;
 
 const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -292,12 +284,21 @@ async function loadRoutine() {
     <div class="ex ${done[e.id] ? 'done' : ''}">
       ${canCheck ? `<input type="checkbox" data-ex="${e.id}" ${done[e.id] ? 'checked' : ''}>` : ''}
       <div class="t"><b>${esc(e.name)}</b><small>${e.sets || '-'} × ${esc(e.reps) || '-'} ${e.weight ? '· ' + esc(e.weight) + ' kg' : ''}</small></div>
+      ${e.gid && G.EX[e.gid] ? `<button class="guide-btn" data-guide="${i}" title="Cómo se hace">▶ Guía</button>` : ''}
       <button class="link" data-rm="${i}">✕</button>
     </div>`).join('') || '<p class="muted">Sin ejercicios. Añade el primero abajo.</p>';
+  const total = day.exercises.length, nDone = day.exercises.filter((e) => done[e.id]).length;
+  $('#progress').hidden = !(canCheck && total);
+  if (canCheck && total) {
+    $('#progBar').style.width = (nDone / total * 100) + '%';
+    $('#progText').textContent = nDone === total ? '🏆 ¡Entrenamiento completado! Eres una máquina.' : `Sesión de hoy: ${nDone} de ${total}${nDone ? ' · ¡vas muy bien!' : ' · ¡a darle!'}`;
+  }
+  document.querySelectorAll('[data-guide]').forEach((b) => b.onclick = () => openGuide(day.exercises[+b.dataset.guide].gid, { day: selDay, index: +b.dataset.guide }));
   document.querySelectorAll('[data-ex]').forEach((c) => c.onchange = async () => {
     db.workouts[date] = db.workouts[date] || {};
     if (c.checked) db.workouts[date][c.dataset.ex] = true; else delete db.workouts[date][c.dataset.ex];
     save(); loadRoutine();
+    if (c.checked && day.exercises.every((e) => db.workouts[date][e.id])) confetti();
   });
   document.querySelectorAll('[data-rm]').forEach((b) => b.onclick = () => { day.exercises.splice(+b.dataset.rm, 1); saveDay(day); });
 }
@@ -305,6 +306,48 @@ function saveDay(day) {
   day.exercises = day.exercises.map((e) => ({ ...e, id: e.id || uid() })).filter((e) => e.name.trim());
   db.routine[selDay] = day; save(); loadRoutine();
 }
+// ---- Guía de ejercicio (animación, pasos y alternativas) ----
+let stopAnim = () => {}, guideCtx = null;
+function openGuide(gid, ctx, origin) {
+  const e = G.EX[gid]; if (!e) return;
+  guideCtx = ctx || guideCtx; stopAnim();
+  const orig = origin || gid;
+  const alts = (e.alts || []).map((a) => G.EX[a]).filter(Boolean);
+  const list = (arr) => arr.map((t) => `<li>${esc(t)}</li>`).join('');
+  $('#guideBody').innerHTML = `
+    <h2 tabindex="-1" autofocus>${esc(e.name)}</h2>
+    <p class="chips"><span>💪 ${esc(e.muscles)}</span><span>${e.sets} × ${esc(e.reps)}</span></p>
+    <svg id="gSvg" viewBox="0 0 200 150" role="img" aria-label="Animación del ejercicio"></svg>
+    <p id="gLabel" class="g-label"></p>
+    <h3>🪑 Antes de empezar</h3><p>${esc(e.setup)}</p>
+    <h3>✅ Paso a paso</h3><ol>${list(e.steps)}</ol>
+    <h3>⚠️ Errores comunes</h3><ul>${list(e.errors)}</ul>
+    <p class="tip">💡 ${esc(e.tip)}</p>
+    ${alts.length ? `<h3>🔁 ¿Está ocupada? Prueba esto</h3><div class="alts">${alts.map((a) => `<button class="alt" data-alt="${a.id}"><b>${esc(a.name)}</b><small>${esc(a.muscles)}</small></button>`).join('')}</div>` : ''}
+    ${gid !== orig ? `<p class="center"><button class="link" data-back="${orig}">↩ Volver a ${esc(G.EX[orig].name)}</button></p>` : ''}
+    ${guideCtx && gid !== (db.routine[guideCtx.day]?.exercises[guideCtx.index]?.gid) ? `<button class="btn primary wide" id="useAlt">Usar esta en mi rutina</button>` : ''}`;
+  stopAnim = G.mount($('#gSvg'), $('#gLabel'), e.pat);
+  document.querySelectorAll('[data-alt]').forEach((b) => b.onclick = () => { openGuide(b.dataset.alt, guideCtx, orig); $('#guideDlg').scrollTop = 0; });
+  document.querySelectorAll('[data-back]').forEach((b) => b.onclick = () => { openGuide(b.dataset.back, guideCtx); $('#guideDlg').scrollTop = 0; });
+  const use = $('#useAlt');
+  if (use) use.onclick = () => {
+    const slot = db.routine[guideCtx.day].exercises[guideCtx.index];
+    Object.assign(slot, { gid, name: e.name, sets: e.sets, reps: e.reps });
+    save(); $('#guideDlg').close(); loadRoutine();
+  };
+  if (!$('#guideDlg').open) $('#guideDlg').showModal();
+  $('#guideDlg').scrollTop = 0;
+}
+$('#exList').innerHTML = Object.values(G.EX).map((e) => `<option value="${esc(e.name)}">`).join('');
+$('#guideClose').onclick = () => $('#guideDlg').close();
+$('#guideDlg').addEventListener('close', () => { stopAnim(); stopAnim = () => {}; guideCtx = null; });
+
+function confetti() {
+  const box = document.createElement('div'); box.className = 'confetti';
+  box.innerHTML = Array.from({ length: 26 }, (_, i) => `<i style="left:${Math.random() * 100}%;animation-delay:${Math.random() * .5}s">${['🎉', '💪', '🔥', '⭐', '🏆'][i % 5]}</i>`).join('');
+  document.body.appendChild(box); setTimeout(() => box.remove(), 3000);
+}
+
 $('#presetBtn').onclick = () => {
   if (confirm('Esto reemplaza tu rutina actual por la sugerida. ¿Continuar?')) { applyPreset(); loadRoutine(); }
 };
@@ -312,7 +355,8 @@ $('#dayName').onchange = (e) => saveDay({ ...(db.routine[selDay] || { exercises:
 $('#exForm').onsubmit = (e) => {
   e.preventDefault();
   const day = db.routine[selDay] || { name: '', exercises: [] };
-  day.exercises.push({ name: $('#exName').value, sets: $('#exSets').value, reps: $('#exReps').value, weight: $('#exWeight').value });
+  const gid = G.findId($('#exName').value) || undefined, lib = gid && G.EX[gid];
+  day.exercises.push({ gid, name: $('#exName').value, sets: $('#exSets').value || lib?.sets || '', reps: $('#exReps').value || lib?.reps || '', weight: $('#exWeight').value });
   e.target.reset(); saveDay(day);
 };
 

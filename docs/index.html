@@ -38,11 +38,12 @@
 
   <section id="tab-rutina" hidden>
     <div class="days" id="days"></div>
+    <div id="progress" class="progress" hidden><div class="track"><div id="progBar"></div></div><p id="progText" class="muted"></p></div>
     <div class="card">
       <input id="dayName" class="title-input" placeholder="Nombre del día (ej. Pecho y tríceps)">
       <div id="exercises"></div>
       <form id="exForm" class="exform">
-        <input id="exName" placeholder="Ejercicio" required>
+        <input id="exName" list="exList" placeholder="Ejercicio" required>
         <input id="exSets" type="number" min="1" placeholder="Series">
         <input id="exReps" placeholder="Reps">
         <input id="exWeight" placeholder="Kg">
@@ -73,6 +74,8 @@
   </div>
   <div class="row" style="margin-top:10px"><button class="btn" value="cancel">Cerrar</button><button class="btn" type="button" id="freeBtn">Poner kcal a mano</button></div>
 </form></dialog>
+<datalist id="exList"></datalist>
+<dialog id="guideDlg" class="guide"><div id="guideBody"></div><button class="btn wide" id="guideClose">Cerrar</button></dialog>
 <dialog id="setDlg"><form method="dialog" id="setForm">
   <h2>Ajustes</h2>
   <label class="muted">Objetivo diario (kcal)</label>
@@ -85,6 +88,7 @@
     <label class="btn">⬆️ Importar<input type="file" id="impFile" accept="application/json" hidden></label></div>
   <div class="row"><button class="btn" value="cancel">Cerrar</button><button class="btn primary" value="ok">Guardar</button></div>
 </form></dialog>
+<script src="guia.js"></script>
 <script src="app.js"></script>
 <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{})</script>
 </body>
