@@ -142,10 +142,19 @@
   <p class="center"><button class="link" data-wel="later">Más tarde</button></p>
 </div></dialog>
 <dialog id="tplDlg" class="guide"><div id="tplBody"></div><button class="btn wide" id="tplClose">Cerrar</button></dialog>
+<dialog id="fixDlg"><form method="dialog" id="fixForm">
+  <h2>¿Qué había realmente?</h2>
+  <p class="muted">Cuéntame qué era y vuelvo a calcular con la misma foto. Por ejemplo: «era pollo y carne de vacuno, no cerdo» o «el arroz era una taza».</p>
+  <textarea id="fixText" rows="3" placeholder="Escribe aquí la corrección"></textarea>
+  <div class="row" style="margin-top:12px"><button class="btn" value="cancel">Cancelar</button><button class="btn primary" value="ok">Recalcular</button></div>
+</form></dialog>
 <dialog id="mealDlg"><form method="dialog" id="mdForm">
   <h2>Corregir comida</h2>
   <p class="muted">Si la foto se equivocó, ajusta lo que quieras.</p>
   <label class="muted">Nombre</label><input id="mdName">
+  <label class="muted">Detalles para calcular (opcional)</label><input id="mdDetail" placeholder="Ej. 150 g de pollo, 100 g de arroz, ensalada">
+  <button class="btn wide-btn" type="button" id="mdAi">✨ Recalcular con IA según lo que escribí</button>
+  <p class="muted" id="mdMsg" aria-live="polite"></p>
   <label class="muted">Calorías (kcal)</label><input id="mdKcal" type="number" min="0" inputmode="numeric">
   <div class="row3"><div><label class="muted">Proteína (g)</label><input id="mdP" type="number" min="0" inputmode="numeric"></div><div><label class="muted">Carbos (g)</label><input id="mdC" type="number" min="0" inputmode="numeric"></div><div><label class="muted">Grasa (g)</label><input id="mdF" type="number" min="0" inputmode="numeric"></div></div>
   <label class="opt"><input type="checkbox" id="mdScale" checked> Si solo cambio las kcal, ajustar proteína, carbos y grasa en proporción</label>

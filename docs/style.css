@@ -148,3 +148,6 @@ nav button span{font-size:.65rem}
 
 #mealDlg{background:var(--card);color:var(--text);border:0;border-radius:14px;width:min(92vw,440px);padding:16px}#mealDlg::backdrop{background:#000a}#mealDlg label.muted{display:block;margin:10px 0 4px}
 .kcal{text-align:right}.kcal .edited{display:block;font-weight:400;font-size:.7rem;color:var(--muted)}
+
+#fixDlg{background:var(--card);color:var(--text);border:0;border-radius:14px;width:min(92vw,440px);padding:16px}#fixDlg::backdrop{background:#000a}
+textarea{background:#0f172a;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px;font:inherit;width:100%;resize:vertical}

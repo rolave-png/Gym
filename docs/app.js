@@ -93,14 +93,42 @@ async function loadMeals() {
   document.querySelectorAll('[data-edit-meal]').forEach((b) => b.onclick = () => openMealEditor(b.dataset.editMeal));
 }
 
+// Corregir con IA: la persona dice qué había en realidad y se vuelve a calcular con la misma foto
+$('#fixForm').onsubmit = async (ev) => {
+  if (ev.submitter?.value !== 'ok' || !lastShot) return;
+  const fix = $('#fixText').value.trim(); if (!fix) return;
+  $('#status').textContent = '🔁 Recalculando con tu corrección…';
+  try {
+    const info = await analyze(lastShot.full, `${lastShot.note || ''}\nCORRECCIÓN DEL USUARIO (tiene prioridad): ${fix}`, (t) => { $('#status').textContent = t; }, lastShot.mime);
+    if (info.error) throw new Error(info.error);
+    const m = db.meals.find((x) => x.id === lastShot.mealId);
+    if (m) { Object.assign(m, { name: String(info.name || m.name).slice(0, 80), calories: n0(info.calories), protein: n0(info.protein), carbs: n0(info.carbs), fat: n0(info.fat), items: Array.isArray(info.items) ? info.items.slice(0, 15).map((i) => ({ name: String(i.name), calories: n0(i.calories) })) : [], notes: String(info.notes || '').slice(0, 200) }); save(); }
+    $('#status').innerHTML = `✅ Corregido: ${esc(m ? m.name : '')} · ${m ? m.calories : ''} kcal <button class="link" id="fixShot">¿Sigue mal? Corregir otra vez</button>`;
+    $('#fixShot').onclick = () => { $('#fixText').value = ''; $('#fixDlg').showModal(); };
+    loadMeals();
+  } catch (err) { $('#status').textContent = '⚠️ ' + errMsg(err); }
+};
+
 // ---- Corregir una comida a mano (cuando la foto se equivoca) ----
 let mealEdit = null;
 function openMealEditor(id) {
   const m = db.meals.find((x) => x.id === id); if (!m) return;
   mealEdit = { id, kcal: m.calories, p: m.protein, c: m.carbs, f: m.fat };
   $('#mdName').value = m.name; $('#mdKcal').value = m.calories; $('#mdP').value = m.protein; $('#mdC').value = m.carbs; $('#mdF').value = m.fat;
-  $('#mdScale').checked = true; $('#mealDlg').showModal();
+  $('#mdScale').checked = true; $('#mdDetail').value = ''; $('#mdMsg').textContent = ''; $('#mealDlg').showModal();
 }
+$('#mdAi').onclick = async () => {
+  if (!db.settings.apiKey) { $('#mdMsg').textContent = '⚠️ Pon tu clave de Gemini en ⚙️ Ajustes.'; return; }
+  const desc = `${$('#mdName').value}. ${$('#mdDetail').value}`.trim();
+  if (!$('#mdName').value.trim()) { $('#mdMsg').textContent = '⚠️ Escribe qué comiste en el nombre.'; return; }
+  $('#mdMsg').textContent = '✨ Calculando…'; $('#mdAi').disabled = true;
+  try {
+    const info = await analyze(null, desc, (t) => { $('#mdMsg').textContent = t; });
+    $('#mdKcal').value = n0(info.calories); $('#mdP').value = n0(info.protein); $('#mdC').value = n0(info.carbs); $('#mdF').value = n0(info.fat);
+    $('#mdMsg').textContent = `✅ Calculado: ${n0(info.calories)} kcal. Revisa y pulsa Guardar.`;
+  } catch (err) { $('#mdMsg').textContent = '⚠️ ' + errMsg(err); }
+  $('#mdAi').disabled = false;
+};
 $('#mdForm').onsubmit = (ev) => {
   if (ev.submitter?.value !== 'ok' || !mealEdit) return;
   const m = db.meals.find((x) => x.id === mealEdit.id); if (!m) return;
@@ -151,7 +179,12 @@ const errMsg = (err) => {
 const PROMPT = `Eres un nutricionista. Analiza la foto de comida y estima su contenido nutricional para la porción que se ve.
 Responde SOLO con JSON válido, sin texto adicional, con este formato:
 {"name": "nombre breve del plato en español", "calories": número, "protein": gramos, "carbs": gramos, "fat": gramos, "items": [{"name": "alimento", "calories": número}], "notes": "supuestos sobre la porción, máx. 1 frase"}
+Si dudas entre ingredientes parecidos (por ejemplo pollo, cerdo o vacuno), elige el más probable y menciónalo en "notes".
+Si el usuario añade una nota o una corrección, tiene prioridad sobre lo que creas ver en la foto.
 Si no hay comida en la imagen, responde {"error": "No veo comida en la foto"}.`;
+const PROMPT_TXT = `Eres un nutricionista. Estima el contenido nutricional de esta comida según la descripción del usuario. Si no indica cantidades, supón una ración normal para un adulto.
+Responde SOLO con JSON válido, sin texto adicional, con este formato:
+{"name": "nombre breve del plato en español", "calories": número, "protein": gramos, "carbs": gramos, "fat": gramos, "items": [{"name": "alimento", "calories": número}], "notes": "supuestos sobre las porciones, máx. 1 frase"}`;
 
 const GEM = 'https://generativelanguage.googleapis.com/v1beta/';
 
@@ -176,7 +209,7 @@ async function callGemini(model, base64, note, mime = 'image/jpeg') {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-goog-api-key': db.settings.apiKey },
     body: JSON.stringify({
-      contents: [{ parts: [{ inline_data: { mime_type: mime, data: base64 } }, { text: PROMPT + (note ? `\nNota del usuario: ${note}` : '') }] }],
+      contents: [{ parts: base64 ? [{ inline_data: { mime_type: mime, data: base64 } }, { text: PROMPT + (note ? `\nNota del usuario: ${note}` : '') }] : [{ text: PROMPT_TXT + `\nDescripción del usuario: ${note}` }] }],
       generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
     }),
   });
@@ -230,6 +263,7 @@ function addMeal(date, info, photo = null) {
   return meal;
 }
 
+let lastShot = null; // foto recién analizada (solo en memoria), para corregirla con una nota
 let pending = null; // última foto preparada, para "Reintentar" sin volver a elegirla
 async function analyzePending() {
   $('#status').textContent = '🔍 Analizando la foto…';
@@ -237,8 +271,9 @@ async function analyzePending() {
     const info = await analyze(pending.full, pending.note, (t) => { $('#status').textContent = t; }, pending.mime);
     if (info.error) throw new Error(info.error);
     const meal = addMeal(date, info, pending.thumb);
-    pending = null; $('#note').value = '';
-    $('#status').textContent = `✅ ${meal.name}: ${meal.calories} kcal`;
+    lastShot = { ...pending, mealId: meal.id }; pending = null; $('#note').value = '';
+    $('#status').innerHTML = `✅ ${esc(meal.name)}: ${meal.calories} kcal <button class="link" id="fixShot">¿Se equivocó? Corregir</button>`;
+    $('#fixShot').onclick = () => { $('#fixText').value = ''; $('#fixDlg').showModal(); };
     loadMeals();
   } catch (err) {
     $('#status').innerHTML = `⚠️ ${esc(errMsg(err))}${pending ? ' <button class="link" id="retryPhoto">Reintentar</button>' : ''}`;
