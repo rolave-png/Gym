@@ -94,20 +94,40 @@ async function loadMeals() {
   });
 }
 
-function resizeImage(file, max = 1280) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const s = Math.min(1, max / Math.max(img.width, img.height));
-      const c = document.createElement('canvas');
-      c.width = img.width * s; c.height = img.height * s;
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      resolve(c.toDataURL('image/jpeg', 0.85));
-    };
-    img.onerror = reject;
-    img.src = URL.createObjectURL(file);
+// Lee la foto por el camino más compatible: createImageBitmap, y si no, <img>
+async function decodeImage(file) {
+  try { return await createImageBitmap(file); } catch {}
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => res(img); img.onerror = () => rej(new Error('No se pudo abrir la imagen'));
+    img.src = url;
   });
 }
+async function resizeImage(file, max = 1280) {
+  const src = await decodeImage(file), s = Math.min(1, max / Math.max(src.width, src.height));
+  const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(src.width * s)); c.height = Math.max(1, Math.round(src.height * s));
+  c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', 0.85);
+}
+// Si el teléfono no puede reducir la foto, se le manda la original a Gemini (acepta JPG, PNG, WEBP, HEIC y HEIF)
+function readRaw(file) {
+  const ext = (file.name.split('.').pop() || '').toLowerCase(), byExt = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', heic: 'image/heic', heif: 'image/heif' };
+  const mime = file.type || byExt[ext] || '';
+  return new Promise((res, rej) => {
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'].includes(mime)) return rej(new Error('Ese formato de imagen no es compatible. Prueba con otra foto o sácala con la cámara.'));
+    if (file.size > 14 * 1024 * 1024) return rej(new Error('La foto es demasiado grande. Prueba con otra o sácala de nuevo con la cámara.'));
+    const r = new FileReader();
+    r.onload = () => res({ data: String(r.result).split(',')[1], mime });
+    r.onerror = () => rej(new Error('No se pudo leer la foto. Prueba con otra.'));
+    r.readAsDataURL(file);
+  });
+}
+const errMsg = (err) => {
+  const m = err && err.message ? err.message : '';
+  if (!m) return 'No se pudo procesar la foto. Prueba con otra o usa «Buscar alimento».';
+  if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return 'Sin conexión con Gemini. Revisa tu internet e inténtalo de nuevo.';
+  return m;
+};
 
 const PROMPT = `Eres un nutricionista. Analiza la foto de comida y estima su contenido nutricional para la porción que se ve.
 Responde SOLO con JSON válido, sin texto adicional, con este formato:
@@ -132,12 +152,12 @@ async function listModels() {
 }
 const detectModel = async () => (await listModels())[0];
 
-async function callGemini(model, base64, note) {
+async function callGemini(model, base64, note, mime = 'image/jpeg') {
   return fetch(`${GEM}models/${encodeURIComponent(model)}:generateContent`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-goog-api-key': db.settings.apiKey },
     body: JSON.stringify({
-      contents: [{ parts: [{ inline_data: { mime_type: 'image/jpeg', data: base64 } }, { text: PROMPT + (note ? `\nNota del usuario: ${note}` : '') }] }],
+      contents: [{ parts: [{ inline_data: { mime_type: mime, data: base64 } }, { text: PROMPT + (note ? `\nNota del usuario: ${note}` : '') }] }],
       generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
     }),
   });
@@ -146,7 +166,7 @@ async function callGemini(model, base64, note) {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const busy = (s) => s === 429 || s === 500 || s === 503;
 
-async function analyze(base64, note, onStatus = () => {}) {
+async function analyze(base64, note, onStatus = () => {}, mime = 'image/jpeg') {
   let candidates = db.settings.model ? [db.settings.model] : [];
   let r, tried = 0, listed = false;
   for (let i = 0; i < 5; i++) {
@@ -158,7 +178,7 @@ async function analyze(base64, note, onStatus = () => {}) {
     }
     const model = candidates[i];
     for (let attempt = 0; attempt < 3; attempt++) {
-      r = await callGemini(model, base64, note);
+      r = await callGemini(model, base64, note, mime);
       if (!busy(r.status)) break;
       if (attempt < 2) { onStatus(`⏳ Gemini está saturado, reintentando (${attempt + 1}/2)…`); await sleep(2500 * (attempt + 1)); }
     }
@@ -169,6 +189,7 @@ async function analyze(base64, note, onStatus = () => {}) {
   if (!r.ok) {
     const t = await r.text();
     if (busy(r.status)) throw new Error('Gemini está saturado ahora mismo. Inténtalo de nuevo en unos minutos o usa «Buscar alimento».');
+    if ((r.status === 400 || r.status === 403) && /API key|API_KEY|permission/i.test(t)) throw new Error('La clave de Gemini no es válida o no tiene permiso. Revísala en ⚙️ Ajustes.');
     throw new Error(`Gemini ${r.status}: ${t.slice(0, 200)}`);
   }
   const j = await r.json();
@@ -196,15 +217,16 @@ $('#photo').onchange = async (e) => {
   if (!db.settings.apiKey) { $('#status').textContent = '⚠️ Pon tu clave de Gemini en ⚙️ Ajustes (o usa «Buscar alimento»).'; return; }
   $('#status').textContent = '🔍 Analizando la foto…';
   try {
-    const full = (await resizeImage(file)).split(',')[1];
-    const thumb = await resizeImage(file, 240);
-    const info = await analyze(full, $('#note').value, (t) => { $('#status').textContent = t; });
+    let full, thumb = null, mime = 'image/jpeg';
+    try { full = (await resizeImage(file)).split(',')[1]; thumb = await resizeImage(file, 240); }
+    catch { const raw = await readRaw(file); full = raw.data; mime = raw.mime; thumb = null; }
+    const info = await analyze(full, $('#note').value, (t) => { $('#status').textContent = t; }, mime);
     if (info.error) throw new Error(info.error);
     const meal = addMeal(date, info, thumb);
     $('#note').value = '';
     $('#status').textContent = `✅ ${meal.name}: ${meal.calories} kcal`;
     loadMeals();
-  } catch (err) { $('#status').textContent = '⚠️ ' + err.message; }
+  } catch (err) { $('#status').textContent = '⚠️ ' + errMsg(err); }
 };
 
 // ---- Buscar alimento (gratis, Open Food Facts) ----
