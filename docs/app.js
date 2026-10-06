@@ -211,22 +211,33 @@ function addMeal(date, info, photo = null) {
   return meal;
 }
 
+let pending = null; // última foto preparada, para "Reintentar" sin volver a elegirla
+async function analyzePending() {
+  $('#status').textContent = '🔍 Analizando la foto…';
+  try {
+    const info = await analyze(pending.full, pending.note, (t) => { $('#status').textContent = t; }, pending.mime);
+    if (info.error) throw new Error(info.error);
+    const meal = addMeal(date, info, pending.thumb);
+    pending = null; $('#note').value = '';
+    $('#status').textContent = `✅ ${meal.name}: ${meal.calories} kcal`;
+    loadMeals();
+  } catch (err) {
+    $('#status').innerHTML = `⚠️ ${esc(errMsg(err))}${pending ? ' <button class="link" id="retryPhoto">Reintentar</button>' : ''}`;
+    const r = $('#retryPhoto'); if (r) r.onclick = analyzePending;
+  }
+}
 $('#photo').onchange = async (e) => {
   const file = e.target.files[0]; e.target.value = '';
   if (!file) return;
   if (!db.settings.apiKey) { $('#status').textContent = '⚠️ Pon tu clave de Gemini en ⚙️ Ajustes (o usa «Buscar alimento»).'; return; }
-  $('#status').textContent = '🔍 Analizando la foto…';
+  $('#status').textContent = '🔍 Preparando la foto…';
   try {
     let full, thumb = null, mime = 'image/jpeg';
     try { full = (await resizeImage(file)).split(',')[1]; thumb = await resizeImage(file, 240); }
     catch { const raw = await readRaw(file); full = raw.data; mime = raw.mime; thumb = null; }
-    const info = await analyze(full, $('#note').value, (t) => { $('#status').textContent = t; }, mime);
-    if (info.error) throw new Error(info.error);
-    const meal = addMeal(date, info, thumb);
-    $('#note').value = '';
-    $('#status').textContent = `✅ ${meal.name}: ${meal.calories} kcal`;
-    loadMeals();
-  } catch (err) { $('#status').textContent = '⚠️ ' + errMsg(err); }
+    pending = { full, thumb, mime, note: $('#note').value };
+  } catch (err) { pending = null; $('#status').textContent = '⚠️ ' + errMsg(err); return; }
+  analyzePending();
 };
 
 // ---- Buscar alimento (gratis, Open Food Facts) ----
