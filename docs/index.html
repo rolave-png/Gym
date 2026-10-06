@@ -50,6 +50,7 @@
         <button class="btn primary">+</button>
       </form>
     </div>
+    <p class="muted center"><button class="btn primary" id="tplBtn">📚 Elegir otra rutina</button></p>
     <p class="muted center"><button class="link" id="presetBtn">Cargar la rutina sugerida (3 días + bici)</button> · <button class="link" id="emptyBtn">Empezar una rutina vacía</button></p>
   </section>
 
@@ -109,6 +110,7 @@
 </form></dialog>
 <datalist id="exList"></datalist>
 <dialog id="guideDlg" class="guide"><div id="guideBody"></div><button class="btn wide" id="guideClose">Cerrar</button></dialog>
+<dialog id="tplDlg" class="guide"><div id="tplBody"></div><button class="btn wide" id="tplClose">Cerrar</button></dialog>
 <dialog id="edDlg"><form method="dialog" id="edForm">
   <h2>Editar ejercicio</h2>
   <label class="muted">Nombre</label><input id="edName">
@@ -130,6 +132,7 @@
 <script src="guia.js"></script>
 <script src="app.js"></script>
 <script src="bienestar.js"></script>
+<script src="plantillas.js"></script>
 <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{})</script>
 </body>
 </html>

@@ -196,6 +196,64 @@
       lines: [['head', 'shoulder'], ['shoulder', 'mid'], ['mid', 'hip'], ['shoulder', 'hand'], ['hip', 'knee'], ['knee', 'foot']], legs: [], arms: [], load: null,
       labels: ['Posición de inicio', '🐱 Redondea la espalda (exhala)', '✊ Aprieta el abdomen', '🐮 Hunde la espalda (inhala)'],
     },
+
+    pushup: {
+      eq: FLOOR,
+      A: { head: [150, 78], shoulder: [136, 84], hip: [88, 105], foot: [40, 127], hand: [140, 130] },
+      B: { head: [154, 104], shoulder: [140, 110], hip: [90, 120], hand: [140, 130] },
+      lines: [['shoulder', 'hip'], ['hip', 'foot'], ['shoulder', 'head']], legs: [], arms: [['shoulder', 'hand', 1]], load: null,
+    },
+    pushup_knee: {
+      eq: FLOOR,
+      A: { head: [152, 80], shoulder: [138, 86], hip: [98, 106], knee: [74, 128], foot: [46, 114], hand: [140, 130] },
+      B: { head: [156, 106], shoulder: [142, 112], hip: [100, 121], hand: [140, 130] },
+      lines: [['shoulder', 'hip'], ['hip', 'knee'], ['knee', 'foot'], ['shoulder', 'head']], legs: [], arms: [['shoulder', 'hand', 1]], load: null,
+    },
+    pushup_inc: {
+      eq: FLOOR + '<rect x="132" y="98" width="46" height="38" rx="6" class="g-eq"/>',
+      A: { head: [137, 64], shoulder: [128, 72], hip: [99, 96], foot: [56, 132], hand: [152, 96] },
+      B: { head: [140, 76], shoulder: [131, 84], hip: [100, 103], hand: [152, 96] },
+      lines: [['shoulder', 'hip'], ['hip', 'foot'], ['shoulder', 'head']], legs: [], arms: [['shoulder', 'hand', 1]], load: null,
+    },
+    lunge: {
+      eq: FLOOR,
+      A: { head: [101, 26], shoulder: [100, 42], hip: [100, 82], foot: [100, 134], knee2: [100, 108], foot2: [98, 134] },
+      B: { head: [101, 48], shoulder: [100, 64], hip: [100, 106], foot: [128, 134], knee2: [82, 124], foot2: [54, 128] },
+      lines: [['shoulder', 'hip'], ['shoulder', 'head'], ['hip', 'knee2'], ['knee2', 'foot2']], legs: [['hip', 'foot', -1]], arms: [], load: null,
+    },
+    glute_bridge: {
+      eq: FLOOR,
+      A: { head: [34, 126], shoulder: [50, 126], hip: [86, 124], foot: [120, 130] },
+      B: { hip: [82, 102] },
+      lines: [['shoulder', 'hip'], ['shoulder', 'head']], legs: [['hip', 'foot', -1]], arms: [], load: null,
+    },
+    superman: {
+      eq: FLOOR,
+      A: { head: [140, 125], shoulder: [118, 127], hip: [76, 128], foot: [22, 130], hand: [164, 128] },
+      B: { head: [140, 108], shoulder: [118, 117], foot: [22, 114], hand: [164, 104] },
+      lines: [['shoulder', 'hip'], ['hip', 'foot'], ['shoulder', 'head'], ['shoulder', 'hand']], legs: [], arms: [], load: null,
+    },
+    crunch_floor: {
+      eq: FLOOR,
+      A: { head: [36, 122], shoulder: [48, 125], hip: [86, 125], foot: [122, 128] },
+      B: { head: [58, 82], shoulder: [66, 96] },
+      lines: [['shoulder', 'hip'], ['shoulder', 'head']], legs: [['hip', 'foot', 1]], arms: [], load: null,
+    },
+    calf: {
+      eq: FLOOR,
+      A: { head: [101, 28], shoulder: [100, 42], hip: [100, 82], knee: [100, 108], foot: [100, 134] },
+      B: { head: [101, 18], shoulder: [100, 32], hip: [100, 72], knee: [100, 100] },
+      lines: [['shoulder', 'hip'], ['shoulder', 'head'], ['hip', 'knee'], ['knee', 'foot']], legs: [], arms: [], load: null,
+    },
+    march: { eq: FLOOR, fn: gait(1.0, 26, 4, 0, 2), lines: [['shoulder', 'hip'], ['shoulder', 'head']], legs: [['hip', 'foot2', -1, 0.45], ['hip', 'foot', -1, 1]], arms: [['shoulder', 'hand2', 1, 0.45], ['shoulder', 'hand', 1, 1]], load: null, label: '🚶 Marcha en el sitio: sube bien las rodillas' },
+    jacks: {
+      eq: FLOOR,
+      fn(sec) {
+        const e = 0.5 - 0.5 * Math.cos((sec / 0.9) * Math.PI * 2);
+        return { head: [100, 24], shL: [84, 42], shR: [116, 42], hipL: [94, 84], hipR: [106, 84], footL: [94 - e * 24, 134], footR: [106 + e * 24, 134], handL: [78 - e * 18, 88 - e * 76], handR: [122 + e * 18, 88 - e * 76] };
+      },
+      lines: [['shL', 'shR'], ['hipL', 'hipR'], ['shL', 'hipL'], ['shR', 'hipR'], ['shL', 'head'], ['shL', 'handL'], ['shR', 'handR'], ['hipL', 'footL'], ['hipR', 'footR']], legs: [], arms: [], load: null, label: '🤸 Abre y cierra, con rebote suave',
+    },
     bike: {
       eq: FLOOR + '<line x1="60" y1="133" x2="150" y2="133" class="g-eq"/><line x1="96" y1="112" x2="82" y2="68" class="g-eq"/><line x1="96" y1="112" x2="132" y2="78" class="g-eq"/><line x1="132" y1="78" x2="142" y2="62" class="g-eq"/><rect x="70" y="63" width="22" height="5" rx="2" class="g-eq"/><circle cx="96" cy="112" r="16" style="fill:none" class="g-eq"/>',
       fn(sec) {
@@ -474,6 +532,58 @@
     ['Exhala y redondea la espalda, metiendo la barbilla.', 'Inhala y hunde la espalda, subiendo la mirada.', 'Hazlo despacio, 10 repeticiones.'],
     ['Moverte muy rápido.', 'Forzar el arco hacia abajo.'],
     'Va muy bien después de entrenar piernas y espalda baja.', []);
+
+
+  add('main', 'flexiones', 'Flexiones de brazos', 'pushup', 3, '6-10', 'Pecho, hombros y tríceps',
+    'Manos un poco más abiertas que los hombros, cuerpo recto de la cabeza a los talones.',
+    ['Baja el pecho hacia el suelo doblando los codos, sin abrirlos mucho.', 'Empuja el suelo para subir hasta estirar los brazos.', 'Mantén abdomen y glúteos firmes todo el tiempo.'],
+    ['Dejar caer la cadera.', 'Abrir los codos hacia los lados como una "T".'],
+    'Si no llegas a 6 repeticiones buenas, empieza con las flexiones inclinadas o con rodillas.', ['flexiones_rodillas', 'flexiones_inclinadas']);
+  add('main', 'flexiones_rodillas', 'Flexiones con rodillas apoyadas', 'pushup_knee', 3, '8-12', 'Pecho, hombros y tríceps',
+    'Apoya las rodillas en el suelo (mejor sobre una toalla o colchoneta). Cuerpo recto de las rodillas a la cabeza.',
+    ['Baja el pecho hacia el suelo doblando los codos.', 'Empuja para subir hasta estirar los brazos.', 'Mantén el abdomen apretado.'],
+    ['Dejar caer la cadera.', 'Bajar solo la cabeza.'],
+    'Es el paso intermedio para llegar a las flexiones completas.', ['flexiones_inclinadas', 'flexiones']);
+  add('main', 'flexiones_inclinadas', 'Flexiones con las manos en el sofá o mesa', 'pushup_inc', 3, '10-12', 'Pecho, hombros y tríceps',
+    'Apoya las manos en un sofá o una mesa firme. Cuanto más alto el apoyo, más fácil.',
+    ['Cuerpo recto, baja el pecho hacia el borde.', 'Empuja para subir hasta estirar los brazos.', 'Con el tiempo, usa un apoyo cada vez más bajo.'],
+    ['Usar un apoyo que se mueva.', 'Dejar caer la cadera.'],
+    'La opción más fácil para empezar sin experiencia.', ['flexiones_rodillas', 'flexiones']);
+  add('main', 'zancadas', 'Zancadas (estocadas)', 'lunge', 3, '10 por pierna', 'Piernas y glúteos',
+    'De pie, pies al ancho de las caderas. Puedes sostener una mancuerna en cada mano si quieres más peso.',
+    ['Da un paso largo hacia adelante y baja la rodilla de atrás hacia el suelo.', 'La rodilla de adelante queda sobre el tobillo, sin pasarse de la punta del pie.', 'Empuja con el pie de adelante para volver.'],
+    ['Dar un paso demasiado corto.', 'Que la rodilla de adelante se vaya hacia adentro.'],
+    'Si pierdes el equilibrio, apóyate con una mano en una pared al comienzo.', ['sentadilla_aire', 'sentadilla_goblet']);
+  add('main', 'puente_suelo', 'Puente de glúteo en el suelo', 'glute_bridge', 3, '15', 'Glúteos y parte de atrás del muslo',
+    'Acuéstate boca arriba, rodillas dobladas y pies apoyados al ancho de las caderas.',
+    ['Empuja con los talones y sube la cadera.', 'Aprieta fuerte los glúteos arriba por 1 segundo.', 'Baja despacio sin apoyar del todo.'],
+    ['Arquear la espalda baja.', 'Empujar con la punta de los pies.'],
+    'Para hacerlo más difícil, apoya una mancuerna sobre la cadera.', ['puente_gluteo', 'rdl']);
+  add('main', 'superman', 'Superman (espalda en el suelo)', 'superman', 3, '12', 'Espalda baja y glúteos',
+    'Acuéstate boca abajo con los brazos estirados al frente.',
+    ['Levanta a la vez brazos, pecho y piernas unos centímetros.', 'Mantén 1 segundo arriba.', 'Baja controlado.'],
+    ['Levantar demasiado la cabeza.', 'Ir con tirones.'],
+    'No necesitas levantar mucho: el movimiento es pequeño pero constante.', ['hiperext', 'plancha']);
+  add('main', 'abdominal_suelo', 'Abdominal en el suelo', 'crunch_floor', 3, '15', 'Abdomen',
+    'Acuéstate boca arriba con las rodillas dobladas y los pies apoyados. Manos cruzadas en el pecho o junto a las orejas.',
+    ['Exhala y sube los hombros del suelo enrollando el tronco.', 'Mira al techo para no encorvar el cuello.', 'Baja despacio sin apoyar la cabeza del todo.'],
+    ['Tirar del cuello con las manos.', 'Subir con impulso.'],
+    'Sube poco pero fuerte. Menos recorrido y más control.', ['plancha', 'abdominal']);
+  add('main', 'elevacion_talones', 'Elevación de talones (gemelos)', 'calf', 3, '15', 'Gemelos',
+    'De pie, con una mano apoyada en una pared. Puedes hacerlo en el borde de un escalón.',
+    ['Sube lo más alto que puedas sobre las puntas de los pies.', 'Aprieta un segundo arriba.', 'Baja despacio, estirando el gemelo.'],
+    ['Rebotar.', 'Doblar las rodillas.'],
+    'Con una mancuerna en la mano sube la dificultad.', []);
+  add('warm', 'marcha_sitio', 'Marcha en el sitio (calentamiento)', 'march', 1, '3 min', 'Todo el cuerpo (sube la temperatura)',
+    'Espacio libre para caminar sin moverte del sitio.',
+    ['Marcha subiendo las rodillas con cada paso.', 'Mueve los brazos a la vez, como al caminar.', 'Mantén 3 minutos subiendo un poco el ritmo.'],
+    ['Encorvarte hacia adelante.', 'Ir tan rápido que te cansas antes de empezar.'],
+    'Es el calentamiento ideal en casa, sin necesidad de equipo.', ['jacks']);
+  add('warm', 'jacks', 'Saltos de tijera suaves', 'jacks', 1, '2 × 20', 'Todo el cuerpo',
+    'De pie, brazos a los costados. Superficie lisa y calzado cómodo.',
+    ['Salta abriendo piernas y brazos hacia arriba.', 'Vuelve a la posición de inicio.', 'Hazlo con rebote suave; si te duelen las rodillas, da pasos al lado.'],
+    ['Aterrizar con las piernas rígidas.', 'Ir muy rápido desde el inicio.'],
+    'Versión sin salto: da un paso al lado abriendo brazos, y vuelve.', ['marcha_sitio']);
 
   const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
   const byName = {};

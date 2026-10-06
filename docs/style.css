@@ -122,3 +122,11 @@ nav button span{font-size:.65rem}
 #readCard h3,#breathCard h3{font-size:.95rem;margin:16px 0 6px}
 #bkDlg{background:var(--card);color:var(--text);border:0;border-radius:14px;width:min(92vw,440px);padding:16px}#bkDlg::backdrop{background:#000a}#bkDlg label{display:block;margin:10px 0 4px}
 @media (prefers-reduced-motion:reduce){.orb-in{transition:none!important}}
+
+.tpls{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.tpl{background:var(--line);color:var(--text);border:2px solid transparent;border-radius:12px;padding:12px;text-align:left;font:inherit;cursor:pointer;display:flex;flex-direction:column;gap:3px}
+.tpl:hover,.tpl:focus-visible{border-color:var(--accent)}
+.tpl .tag{font-size:.75rem;color:var(--accent);font-weight:700}.tpl b{font-size:1rem}.tpl small{color:var(--muted)}.tpl p{margin:4px 0 0;font-size:.9rem;line-height:1.35}
+.opt{display:flex;gap:10px;align-items:center;padding:6px 0}.opt input{width:20px;height:20px;accent-color:var(--accent)}
+#tplDlg details{margin:6px 0}#tplDlg summary{cursor:pointer;padding:6px 0}#tplDlg ul{margin:4px 0 8px;padding-left:22px}
+#tplDlg .btn:disabled{opacity:.4}
