@@ -82,7 +82,7 @@ Si no hay comida en la imagen, responde {"error": "No veo comida en la foto"}.`;
 const GEM = 'https://generativelanguage.googleapis.com/v1beta/';
 
 // Elige un modelo "flash" disponible para esta clave (los nombres cambian con el tiempo)
-async function detectModel() {
+async function listModels() {
   const r = await fetch(GEM + 'models?pageSize=200', { headers: { 'x-goog-api-key': db.settings.apiKey } });
   if (!r.ok) throw new Error(`No se pudo listar modelos (${r.status}). Revisa la clave en Ajustes.`);
   const list = (await r.json()).models || [];
@@ -93,8 +93,9 @@ async function detectModel() {
     .filter((n) => /^gemini-[\d.]+-flash/.test(n) && !/(lite|image|tts|live|audio|thinking|embedding|exp|robotics|computer|learnlm)/.test(n));
   if (!ok.length) throw new Error('Tu clave no tiene modelos Gemini Flash disponibles.');
   ok.sort((a, b) => ver(b) - ver(a) || (/preview/.test(a) - /preview/.test(b)) || a.length - b.length);
-  return ok[0];
+  return ok;
 }
+const detectModel = async () => (await listModels())[0];
 
 async function callGemini(model, base64, note) {
   return fetch(`${GEM}models/${encodeURIComponent(model)}:generateContent`, {
@@ -107,16 +108,34 @@ async function callGemini(model, base64, note) {
   });
 }
 
-async function analyze(base64, note) {
-  let model = db.settings.model;
-  if (!model) { model = await detectModel(); db.settings.model = model; save(); }
-  let r = await callGemini(model, base64, note);
-  if (r.status === 404 || r.status === 400 && !(await r.clone().text()).includes('API key')) {
-    // El modelo guardado ya no existe para esta clave: buscar otro y reintentar una vez
-    const alt = await detectModel();
-    if (alt !== model) { model = alt; db.settings.model = alt; save(); r = await callGemini(model, base64, note); }
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const busy = (s) => s === 429 || s === 500 || s === 503;
+
+async function analyze(base64, note, onStatus = () => {}) {
+  let candidates = db.settings.model ? [db.settings.model] : [];
+  let r, tried = 0, listed = false;
+  for (let i = 0; i < 5; i++) {
+    if (i >= candidates.length) { // sin candidatos pendientes: pedir la lista a Google
+      if (listed) break;
+      const all = await listModels(); listed = true;
+      candidates = [...candidates, ...all.filter((m) => !candidates.includes(m))].slice(0, 4);
+      if (i >= candidates.length) break;
+    }
+    const model = candidates[i];
+    for (let attempt = 0; attempt < 3; attempt++) {
+      r = await callGemini(model, base64, note);
+      if (!busy(r.status)) break;
+      if (attempt < 2) { onStatus(`⏳ Gemini está saturado, reintentando (${attempt + 1}/2)…`); await sleep(2500 * (attempt + 1)); }
+    }
+    if (r.ok) { if (db.settings.model !== model) { db.settings.model = model; save(); } break; }
+    if (!(busy(r.status) || r.status === 404)) break; // errores de clave u otros: no seguir probando
+    onStatus('🔄 Probando otro modelo…');
   }
-  if (!r.ok) throw new Error(`Gemini ${r.status}: ${(await r.text()).slice(0, 200)}`);
+  if (!r.ok) {
+    const t = await r.text();
+    if (busy(r.status)) throw new Error('Gemini está saturado ahora mismo. Inténtalo de nuevo en unos minutos o usa «Buscar alimento».');
+    throw new Error(`Gemini ${r.status}: ${t.slice(0, 200)}`);
+  }
   const j = await r.json();
   const text = (j.candidates?.[0]?.content?.parts || []).map((c) => c.text || '').join('');
   const m = text.match(/\{[\s\S]*\}/);
@@ -144,7 +163,7 @@ $('#photo').onchange = async (e) => {
   try {
     const full = (await resizeImage(file)).split(',')[1];
     const thumb = await resizeImage(file, 240);
-    const info = await analyze(full, $('#note').value);
+    const info = await analyze(full, $('#note').value, (t) => { $('#status').textContent = t; });
     if (info.error) throw new Error(info.error);
     const meal = addMeal(date, info, thumb);
     $('#note').value = '';
