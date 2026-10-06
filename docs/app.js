@@ -20,23 +20,35 @@ const n0 = (v) => Math.max(0, Math.round(Number(v) || 0));
 
 // ---- Rutina sugerida (3 días de cuerpo completo + bici), según las máquinas del gimnasio ----
 const G = window.GUIA;
-const ex = (id) => ({ gid: id, name: G.EX[id].name, sets: G.EX[id].sets, reps: G.EX[id].reps, weight: '' });
+const ex = (id) => ({ gid: id, name: G.EX[id].name, sets: G.EX[id].sets, reps: G.EX[id].reps, weight: '', sec: G.EX[id].sec, opt: G.EX[id].sec === 'cardio' || undefined });
+const WARM = ['cal_cinta', 'circulos_brazos', 'sentadilla_aire', 'balanceo_piernas'];
+const COOL = ['est_pecho', 'est_cuads', 'est_isquios', 'est_hombro', 'est_espalda'];
+// día de gimnasio completo: calentamiento + ejercicios + cardio opcional + estiramientos
+const gymDay = (name, main) => ({ name, exercises: [...WARM, ...main, 'trotadora', ...COOL].map(ex) });
 const PRESET = {
-  1: { name: 'Día 1 · Cuerpo completo A', exercises: ['prensa', 'press_pecho_maq', 'remo_pecho', 'press_hombro_maq', 'curl_femoral', 'abdominal'].map(ex) },
+  1: gymDay('Día 1 · Cuerpo completo A', ['prensa', 'press_pecho_maq', 'remo_pecho', 'press_hombro_maq', 'curl_femoral', 'abdominal']),
   2: { name: 'Bicicleta estática (casa)', exercises: [ex('bici')] },
-  3: { name: 'Día 2 · Cuerpo completo B', exercises: ['jalon', 'hip_thrust', 'press_inc_mancuernas', 'remo_mancuerna', 'ext_pierna', 'hiperext'].map(ex) },
+  3: gymDay('Día 2 · Cuerpo completo B', ['jalon', 'hip_thrust', 'press_inc_mancuernas', 'remo_mancuerna', 'ext_pierna', 'hiperext']),
   4: { name: 'Descanso', exercises: [] },
-  5: { name: 'Día 3 · Cuerpo completo C', exercises: ['sentadilla_smith', 'pec_deck', 'remo_polea', 'laterales', 'abductor', 'curl_biceps', 'triceps_polea', 'abdominal'].map(ex) },
+  5: gymDay('Día 3 · Cuerpo completo C', ['sentadilla_smith', 'pec_deck', 'remo_polea', 'laterales', 'abductor', 'curl_biceps', 'triceps_polea', 'abdominal']),
   6: { name: 'Bicicleta estática (casa)', exercises: [ex('bici')] },
   0: { name: 'Descanso', exercises: [] },
 };
 function applyPreset() {
-  db.routine = {};
+  db.routine = {}; db.supportV = 2;
   for (const [d, day] of Object.entries(PRESET)) db.routine[d] = { name: day.name, exercises: day.exercises.map((e) => ({ ...e, id: uid() })) };
   save();
 }
 if (Object.values(db.routine).every((d) => !d.exercises?.length)) applyPreset(); // primera vez: cargar la sugerida
 for (const d of Object.values(db.routine)) for (const e of d.exercises || []) if (!e.gid) e.gid = G.findId(e.name) || undefined;
+if (!db.supportV) { // v2: calentamiento + estiramientos + cardio opcional en los días de gimnasio
+  for (const d of Object.values(db.routine)) {
+    const ex0 = d.exercises || [];
+    const main = ex0.filter((e) => e.gid && !['bici', 'caminadora'].includes(e.gid));
+    if (main.length >= 3 && !ex0.some((e) => e.sec && e.sec !== 'main')) d.exercises = [...WARM, ...ex0.map((e) => e.id ? e : { ...e, id: uid() }).map((e) => e), 'trotadora', ...COOL].map((x) => (typeof x === 'string' ? { ...ex(x), id: uid() } : x));
+  }
+  db.supportV = 2; save();
+}
 
 const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -280,14 +292,20 @@ async function loadRoutine() {
   const done = db.workouts[date] || {};
   const canCheck = selDay === new Date(date + 'T12:00').getDay();
   $('#dayName').value = day.name;
-  $('#exercises').innerHTML = day.exercises.map((e, i) => `
-    <div class="ex ${done[e.id] ? 'done' : ''}">
+  const SEC = { warm: '🔥 Calentamiento · 6-8 min', main: '💪 Entrenamiento', cardio: '🏃 Cardio opcional', cool: '🧘 Estiramientos · 5 min' };
+  let prevSec = null;
+  $('#exercises').innerHTML = day.exercises.map((e, i) => {
+    const sec = e.sec || 'main', head = sec !== prevSec && day.exercises.some((x) => x.sec && x.sec !== 'main') ? `<h4 class="sec ${sec}">${SEC[sec]}</h4>` : '';
+    prevSec = sec;
+    return `${head}
+    <div class="ex ${done[e.id] ? 'done' : ''} ${e.opt ? 'opt' : ''}">
       ${canCheck ? `<input type="checkbox" data-ex="${e.id}" ${done[e.id] ? 'checked' : ''}>` : ''}
-      <div class="t"><b>${esc(e.name)}</b><small>${e.sets || '-'} × ${esc(e.reps) || '-'} ${e.weight ? '· ' + esc(e.weight) + ' kg' : ''}</small></div>
+      <div class="t"><b>${esc(e.name)}</b><small>${e.sets || '-'} × ${esc(e.reps) || '-'} ${e.weight ? '· ' + esc(e.weight) + ' kg' : ''}${e.opt ? ' · opcional' : ''}</small></div>
       ${e.gid && G.EX[e.gid] ? `<button class="guide-btn" data-guide="${i}" title="Cómo se hace">▶ Guía</button>` : ''}
       <button class="link" data-rm="${i}">✕</button>
-    </div>`).join('') || '<p class="muted">Sin ejercicios. Añade el primero abajo.</p>';
-  const total = day.exercises.length, nDone = day.exercises.filter((e) => done[e.id]).length;
+    </div>`;
+  }).join('') || '<p class="muted">Sin ejercicios. Añade el primero abajo.</p>';
+  const req = day.exercises.filter((e) => !e.opt), total = req.length, nDone = req.filter((e) => done[e.id]).length;
   $('#progress').hidden = !(canCheck && total);
   if (canCheck && total) {
     $('#progBar').style.width = (nDone / total * 100) + '%';
@@ -298,7 +316,7 @@ async function loadRoutine() {
     db.workouts[date] = db.workouts[date] || {};
     if (c.checked) db.workouts[date][c.dataset.ex] = true; else delete db.workouts[date][c.dataset.ex];
     save(); loadRoutine();
-    if (c.checked && day.exercises.every((e) => db.workouts[date][e.id])) confetti();
+    if (c.checked && day.exercises.filter((e) => !e.opt).every((e) => db.workouts[date][e.id])) confetti();
   });
   document.querySelectorAll('[data-rm]').forEach((b) => b.onclick = () => { day.exercises.splice(+b.dataset.rm, 1); saveDay(day); });
 }
@@ -356,7 +374,7 @@ $('#exForm').onsubmit = (e) => {
   e.preventDefault();
   const day = db.routine[selDay] || { name: '', exercises: [] };
   const gid = G.findId($('#exName').value) || undefined, lib = gid && G.EX[gid];
-  day.exercises.push({ gid, name: $('#exName').value, sets: $('#exSets').value || lib?.sets || '', reps: $('#exReps').value || lib?.reps || '', weight: $('#exWeight').value });
+  day.exercises.push({ gid, sec: lib?.sec && lib.sec !== 'main' ? lib.sec : undefined, opt: lib?.sec === 'cardio' || undefined, name: $('#exName').value, sets: $('#exSets').value || lib?.sets || '', reps: $('#exReps').value || lib?.reps || '', weight: $('#exWeight').value });
   e.target.reset(); saveDay(day);
 };
 

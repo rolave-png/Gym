@@ -84,3 +84,7 @@ header .link{font-size:1.3rem;text-decoration:none}
 @keyframes fall{to{transform:translateY(105vh) rotate(540deg);opacity:.8}}
 @media (prefers-reduced-motion:reduce){.confetti i{animation:none;opacity:0}}
 .guide h2:focus{outline:none}
+
+.sec{margin:14px 0 2px;font-size:.82rem;letter-spacing:.03em;color:var(--muted);text-transform:uppercase}
+.sec.warm{color:#fb923c}.sec.cool{color:#38bdf8}.sec.cardio{color:#a78bfa}
+.ex.opt .t b{font-weight:500}

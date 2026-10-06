@@ -12,6 +12,19 @@
   }
 
   // Cada patrón: puntos de inicio (A) y de esfuerzo (B). legs/arms = [cadera|hombro, pie|mano, lado del doblez]
+
+  const TREAD = FLOOR + '<rect x="52" y="134" width="96" height="5" rx="2" class="g-eq"/><line x1="150" y1="84" x2="150" y2="136" class="g-eq"/><rect x="140" y="60" width="22" height="16" rx="3" class="g-eq"/>';
+  // Ciclo de marcha: la pierna apoyada va hacia atrás y la que se balancea sube
+  function gait(cycle, lift, stride, lean, bounce) {
+    return (sec) => {
+      const ph = (sec / cycle) % 1;
+      const leg = (p) => { p = ((p % 1) + 1) % 1; if (p < 0.6) { const u = p / 0.6; return [100 + stride - 2 * stride * u, 134]; } const u = (p - 0.6) / 0.4; return [100 - stride + 2 * stride * u, 134 - lift * Math.sin(Math.PI * u)]; };
+      const b = Math.abs(Math.sin(Math.PI * ph * 2)) * bounce, sh = [100 + lean, 42 - b];
+      const sw = 16 * Math.sin(2 * Math.PI * ph);
+      return { head: [sh[0] + lean * 0.3 + 1, 27 - b], shoulder: sh, hip: [100, 82 - b], foot: leg(ph), foot2: leg(ph + 0.5), hand: [sh[0] - sw, 70 - b], hand2: [sh[0] + sw, 70 - b] };
+    };
+  }
+
   const P = {
     press_h: {
       eq: FLOOR + '<rect x="30" y="100" width="108" height="7" rx="3" class="g-eq"/><line x1="48" y1="107" x2="48" y2="136" class="g-eq"/><line x1="120" y1="107" x2="120" y2="136" class="g-eq"/>',
@@ -133,8 +146,58 @@
       B: { hip: [88, 112], shoulder: [142, 99] },
       lines: [['shoulder', 'hip'], ['shoulder', 'head'], ['hip', 'foot']], legs: [], arms: [['shoulder', 'hand', 1]], load: null,
     },
+
+    walk: { eq: TREAD, fn: gait(1.2, 9, 16, 0, 1), lines: [['shoulder', 'hip'], ['shoulder', 'head']], legs: [['hip', 'foot2', -1, 0.45], ['hip', 'foot', -1, 1]], arms: [['shoulder', 'hand2', 1, 0.45], ['shoulder', 'hand', 1, 1]], load: null, label: '🚶 Camina relajado, brazos sueltos' },
+    jog: { eq: TREAD, fn: gait(0.7, 16, 20, 5, 3), lines: [['shoulder', 'hip'], ['shoulder', 'head']], legs: [['hip', 'foot2', -1, 0.45], ['hip', 'foot', -1, 1]], arms: [['shoulder', 'hand2', 1, 0.45], ['shoulder', 'hand', 1, 1]], load: null, label: '🏃 Trote suave: respira por la nariz y la boca' },
+    arm_circles: {
+      eq: FLOOR + '<circle cx="100" cy="50" r="38" style="fill:none;stroke-dasharray:3 5" class="g-eq"/>',
+      fn(sec) { const a = (sec / 1.6) * Math.PI * 2; return { head: [100, 26], shoulder: [100, 50], hip: [100, 88], foot: [100, 134], hand: [100 + 38 * Math.cos(a), 50 + 38 * Math.sin(a)] }; },
+      lines: [['shoulder', 'hip'], ['shoulder', 'head'], ['shoulder', 'hand']], legs: [['hip', 'foot', -1]], arms: [], load: null, label: '🔄 Círculos grandes y suaves; luego cambia de sentido',
+    },
+    leg_swing: {
+      eq: FLOOR + '<line x1="140" y1="34" x2="140" y2="136" class="g-eq"/>',
+      fn(sec) { const th = 0.6 * Math.sin((sec / 1.8) * Math.PI * 2); return { head: [100, 26], shoulder: [100, 42], hip: [100, 84], foot: [100 + 52 * Math.sin(th), 84 + 52 * Math.cos(th)], foot2: [100, 134], hand: [137, 58] }; },
+      lines: [['shoulder', 'hip'], ['shoulder', 'head']], legs: [['hip', 'foot2', -1, 1], ['hip', 'foot', -1, 1]], arms: [['shoulder', 'hand', 1]], load: null, label: '🦵 Balancea la pierna adelante y atrás, sin forzar',
+    },
+    squat_body: {
+      eq: FLOOR,
+      A: { head: [101, 30], shoulder: [100, 42], hip: [98, 80], foot: [100, 134], hand: [122, 56] },
+      B: { head: [108, 56], shoulder: [102, 68], hip: [84, 100], hand: [124, 74] },
+      lines: [['shoulder', 'hip'], ['shoulder', 'head']], legs: [['hip', 'foot', -1]], arms: [['shoulder', 'hand', 1]], load: null,
+    },
+    stretch_chest: {
+      stretch: true, eq: FLOOR,
+      A: { head: [101, 28], shoulder: [100, 42], hip: [100, 82], foot: [100, 134], hand: [94, 88] },
+      B: { head: [103, 28], shoulder: [98, 42], hand: [76, 66] },
+      lines: [['shoulder', 'hip'], ['shoulder', 'head']], legs: [['hip', 'foot', -1]], arms: [['shoulder', 'hand', 1]], load: null,
+    },
+    stretch_quad: {
+      stretch: true, eq: FLOOR + '<line x1="150" y1="34" x2="150" y2="136" class="g-eq"/>',
+      A: { head: [101, 28], shoulder: [100, 42], hip: [100, 82], foot: [100, 134], foot2: [100, 134], knee: [103, 108], hand: [150, 70] },
+      B: { foot: [80, 88], knee: [104, 106], hand: [82, 92] },
+      lines: [['shoulder', 'hip'], ['shoulder', 'head'], ['hip', 'knee'], ['knee', 'foot']], legs: [['hip', 'foot2', -1, 1]], arms: [['shoulder', 'hand', 1]], load: null,
+    },
+    fold: {
+      stretch: true, eq: FLOOR,
+      A: { head: [101, 28], shoulder: [100, 42], hip: [100, 82], foot: [100, 134], hand: [104, 88] },
+      B: { head: [136, 82], shoulder: [124, 72], hip: [88, 84], hand: [114, 112] },
+      lines: [['shoulder', 'hip'], ['shoulder', 'head']], legs: [['hip', 'foot', -1]], arms: [['shoulder', 'hand', 1]], load: null,
+    },
+    cross_arm: {
+      stretch: true, eq: FLOOR,
+      A: { head: [100, 24], shL: [84, 42], shR: [116, 42], hipL: [92, 84], hipR: [108, 84], footL: [90, 134], footR: [110, 134], handR: [122, 86], handL: [78, 86] },
+      B: { handR: [76, 52], handL: [96, 56] },
+      lines: [['shL', 'shR'], ['hipL', 'hipR'], ['shL', 'hipL'], ['shR', 'hipR'], ['shL', 'head'], ['shR', 'handR'], ['shL', 'handL'], ['hipL', 'footL'], ['hipR', 'footR']], legs: [], arms: [], load: null,
+    },
+    catcow: {
+      eq: FLOOR,
+      A: { head: [152, 78], shoulder: [132, 86], mid: [102, 94], hip: [72, 86], hand: [132, 128], knee: [72, 126], foot: [46, 128] },
+      B: { head: [146, 104], mid: [102, 72] },
+      lines: [['head', 'shoulder'], ['shoulder', 'mid'], ['mid', 'hip'], ['shoulder', 'hand'], ['hip', 'knee'], ['knee', 'foot']], legs: [], arms: [], load: null,
+      labels: ['Posición de inicio', '🐱 Redondea la espalda (exhala)', '✊ Aprieta el abdomen', '🐮 Hunde la espalda (inhala)'],
+    },
     bike: {
-      eq: FLOOR + '<line x1="60" y1="133" x2="150" y2="133" class="g-eq"/><line x1="96" y1="112" x2="82" y2="68" class="g-eq"/><line x1="96" y1="112" x2="132" y2="78" class="g-eq"/><line x1="132" y1="78" x2="142" y2="62" class="g-eq"/><rect x="70" y="63" width="22" height="5" rx="2" class="g-eq"/><circle cx="96" cy="112" r="16" fill="none" class="g-eq"/>',
+      eq: FLOOR + '<line x1="60" y1="133" x2="150" y2="133" class="g-eq"/><line x1="96" y1="112" x2="82" y2="68" class="g-eq"/><line x1="96" y1="112" x2="132" y2="78" class="g-eq"/><line x1="132" y1="78" x2="142" y2="62" class="g-eq"/><rect x="70" y="63" width="22" height="5" rx="2" class="g-eq"/><circle cx="96" cy="112" r="16" style="fill:none" class="g-eq"/>',
       fn(sec) {
         const a = (sec / 1.6) * Math.PI * 2, C = [96, 112], r = 16;
         return {
@@ -162,7 +225,7 @@
     if (p.load && p.load.cable) { const l = q[p.load.pt]; s += `<line x1="${p.load.cable[0]}" y1="${p.load.cable[1]}" x2="${f(l[0])}" y2="${f(l[1])}" class="g-eq"/>`; }
     for (const [a, b] of p.lines) s += `<line x1="${f(q[a][0])}" y1="${f(q[a][1])}" x2="${f(q[b][0])}" y2="${f(q[b][1])}" class="g-body"/>`;
     for (const [a, b, sg, op] of p.legs) { const m = ik(q[a], q[b], LEG[0], LEG[1], sg); s += `<polyline points="${f(q[a][0])},${f(q[a][1])} ${f(m[0])},${f(m[1])} ${f(q[b][0])},${f(q[b][1])}" class="g-body" ${op ? `opacity="${op}"` : ''}/>`; }
-    for (const [a, b, sg] of p.arms) { const m = ik(q[a], q[b], ARM[0], ARM[1], sg); s += `<polyline points="${f(q[a][0])},${f(q[a][1])} ${f(m[0])},${f(m[1])} ${f(q[b][0])},${f(q[b][1])}" class="g-body"/>`; }
+    for (const [a, b, sg, op] of p.arms) { const m = ik(q[a], q[b], ARM[0], ARM[1], sg); s += `<polyline points="${f(q[a][0])},${f(q[a][1])} ${f(m[0])},${f(m[1])} ${f(q[b][0])},${f(q[b][1])}" class="g-body" ${op ? `opacity="${op}"` : ''}/>`; }
     s += `<circle cx="${f(q.head[0])}" cy="${f(q.head[1])}" r="8" class="g-head"/>`;
     if (p.load) for (const pt of [p.load.pt, p.load.pt2].filter(Boolean)) {
       const l = q[pt];
@@ -275,7 +338,7 @@
       'Regula el asiento para que la rodilla quede casi estirada con el pedal abajo. Espalda recta.',
       ['Pedalea a un ritmo en el que puedas conversar sin ahogarte.', 'Mantén ese ritmo de 30 a 40 minutos.', 'Calienta 5 minutos suave al empezar y baja el ritmo al final.'],
       ['Ir tan fuerte que no puedes hablar (agotas y recuperas peor).', 'Encorvarte sobre el manubrio.'],
-      'Pon música o una serie. Si lo disfrutas, lo mantienes.', ['caminadora']],
+      'Pon música o una serie. Si lo disfrutas, lo mantienes.', ['caminadora', 'trotadora']],
 
     // ---- Variantes ("si está ocupada") ----
     ['sentadilla_goblet', 'Sentadilla goblet con mancuerna', 'squat_free', 3, '10-12', 'Piernas y glúteos',
@@ -343,15 +406,74 @@
       ['Abre los brazos hacia los lados en arco, como abriendo unas alas.', 'Baja hasta sentir estiramiento en el pecho.', 'Vuelve juntando las manos arriba.'],
       ['Bajar demasiado (riesgo en el hombro).', 'Usar demasiado peso.'],
       'Mancuernas ligeras: se siente mucho más que un press.', ['pec_deck', 'cruce_polea']],
-    ['caminadora', 'Caminata en cinta (inclinada)', null, 1, '30 min', 'Corazón y piernas',
+    ['caminadora', 'Caminata en cinta (inclinada)', 'walk', 1, '30 min', 'Corazón y piernas',
       'Pon una inclinación de 5-8 % y una velocidad cómoda.',
       ['Camina a paso rápido, sin agarrarte de las barras.', 'Mantén ese ritmo 30 minutos.', 'Baja la velocidad al final para recuperar.'],
       ['Agarrarte de las barras todo el rato.', 'Ir tan rápido que no puedas hablar.'],
-      'Caminar inclinado exige más que correr suave y cuida las rodillas.', ['bici']],
+      'Caminar inclinado exige más que correr suave y cuida las rodillas.', ['trotadora', 'bici']],
   ];
 
   const EX = {};
-  for (const e of E) EX[e[0]] = { id: e[0], name: e[1], pat: e[2], sets: e[3], reps: e[4], muscles: e[5], setup: e[6], steps: e[7], errors: e[8], tip: e[9], alts: e[10] };
+  for (const e of E) EX[e[0]] = { id: e[0], name: e[1], pat: e[2], sets: e[3], reps: e[4], muscles: e[5], setup: e[6], steps: e[7], errors: e[8], tip: e[9], alts: e[10], sec: 'main' };
+
+
+  const add = (sec, id, name, pat, sets, reps, muscles, setup, steps, errors, tip, alts) =>
+    (EX[id] = { id, name, pat, sets, reps, muscles, setup, steps, errors, tip, alts, sec });
+  add('warm', 'cal_cinta', 'Caminata suave en cinta (calentamiento)', 'walk', 1, '5 min', 'Todo el cuerpo (sube la temperatura)',
+    'Velocidad suave (4-5 km/h), sin inclinación. Suéltate y balancea los brazos.',
+    ['Camina 5 minutos a un paso cómodo.', 'En los últimos 30 segundos sube un poco el ritmo.', 'Deberías sentir calor, no cansancio.'],
+    ['Agarrarte de las barras.', 'Empezar con pesos sin haber calentado.'],
+    'El calentamiento sube la temperatura del cuerpo y protege tus articulaciones. No te lo saltes.', ['cal_bici']);
+  add('warm', 'cal_bici', 'Bici suave 5 min (calentamiento)', 'bike', 1, '5 min', 'Piernas y corazón',
+    'Resistencia muy baja. Regula el asiento para que la rodilla quede casi estirada abajo.',
+    ['Pedalea suave durante 5 minutos.', 'Sube un poco el ritmo al final.', 'Cuando sientas calor, ya puedes empezar.'],
+    ['Ir con demasiada resistencia.', 'Encorvarte sobre el manubrio.'],
+    'Es la opción si la cinta está ocupada.', ['cal_cinta']);
+  add('warm', 'circulos_brazos', 'Círculos de brazos', 'arm_circles', 2, '10 por sentido', 'Hombros',
+    'De pie, brazos estirados a los lados.',
+    ['Haz círculos amplios hacia adelante.', 'Después otros 10 hacia atrás.', 'Empieza pequeño y ve agrandando.'],
+    ['Hacerlos rápido y con tirones.', 'Encoger los hombros.'],
+    'Lubrica el hombro antes de cualquier press o remo.', []);
+  add('warm', 'sentadilla_aire', 'Sentadilla sin peso', 'squat_body', 1, '12', 'Piernas y glúteos',
+    'Pies al ancho de los hombros y brazos estirados al frente para mantener el equilibrio.',
+    ['Baja sentándote hacia atrás, con el pecho arriba.', 'Baja hasta donde puedas con la espalda recta.', 'Sube empujando con todo el pie.'],
+    ['Que las rodillas se vayan hacia adentro.', 'Despegar los talones.'],
+    'Despierta la cadera y las rodillas antes de usar peso.', []);
+  add('warm', 'balanceo_piernas', 'Balanceo de piernas', 'leg_swing', 1, '10 por pierna', 'Cadera y piernas',
+    'Apóyate en una pared o un poste, de lado, con una pierna libre.',
+    ['Balancea la pierna libre hacia adelante y atrás.', 'Aumenta el recorrido poco a poco, sin tirones.', 'Cambia de pierna.'],
+    ['Balancear con fuerza y arquear la espalda.', 'Soltar el apoyo.'],
+    'Ideal antes de las prensas, sentadillas y puentes de glúteo.', []);
+  add('cardio', 'trotadora', 'Cardio opcional en trotadora (15-20 min)', 'jog', 1, '15-20 min', 'Corazón y piernas (quema de grasa)',
+    'Calienta 2-3 minutos caminando. Inclinación de 1 a 2 %.',
+    ['Principiante: camina rápido con inclinación de 5-8 % durante 15-20 minutos.', 'Intermedio: alterna 1 minuto de trote suave con 2 minutos caminando, 6 veces.', 'Termina caminando 2 minutos para bajar las pulsaciones.'],
+    ['Agarrarte de las barras.', 'Empezar demasiado fuerte y no poder terminar.'],
+    'Es opcional: úsalo los días que tengas energía. Si te duelen las rodillas o la espalda, mejor camina.', ['caminadora', 'bici']);
+  add('cool', 'est_pecho', 'Estiramiento de pecho', 'stretch_chest', 1, '30 s', 'Pecho y hombros',
+    'De pie, entrelaza las manos detrás de la espalda.',
+    ['Estira los brazos hacia atrás y sube un poco las manos.', 'Saca el pecho y mira al frente.', 'Mantén 30 segundos respirando profundo.'],
+    ['Arquear la espalda baja.', 'Encoger los hombros.'],
+    'Se debe sentir un estiramiento agradable, nunca dolor.', []);
+  add('cool', 'est_cuads', 'Estiramiento de cuádriceps (de pie)', 'stretch_quad', 1, '30 s por pierna', 'Parte de adelante del muslo',
+    'Apóyate en una pared o poste con una mano.',
+    ['Dobla una rodilla y agarra el tobillo con la mano.', 'Lleva el talón hacia el glúteo, rodillas juntas.', 'Mantén 30 segundos y cambia de pierna.'],
+    ['Arquear la espalda baja.', 'Separar las rodillas.'],
+    'Aprieta ligeramente el glúteo de la pierna doblada para sentir más el estiramiento.', []);
+  add('cool', 'est_isquios', 'Estiramiento de isquios (inclinado)', 'fold', 1, '30 s', 'Parte de atrás del muslo y espalda baja',
+    'De pie con las piernas casi estiradas, rodillas ligeramente flexionadas.',
+    ['Inclínate hacia adelante con la espalda recta, llevando las manos hacia las piernas.', 'Baja hasta donde sientas el estiramiento, sin forzar.', 'Mantén 30 segundos respirando.'],
+    ['Rebotar para llegar más abajo.', 'Redondear mucho la espalda.'],
+    'No importa tocar el suelo: importa sentir el estiramiento atrás del muslo.', []);
+  add('cool', 'est_hombro', 'Estiramiento de hombro (brazo cruzado)', 'cross_arm', 1, '30 s por brazo', 'Hombros y parte alta de la espalda',
+    'De pie, espalda recta.',
+    ['Cruza un brazo estirado sobre el pecho.', 'Con la otra mano, tira suavemente del codo hacia ti.', 'Mantén 30 segundos y cambia de brazo.'],
+    ['Girar el tronco.', 'Tirar con demasiada fuerza.'],
+    'Hombros relajados: no los subas hacia las orejas.', []);
+  add('cool', 'est_espalda', 'Espalda: gato-vaca', 'catcow', 1, '10 lentas', 'Columna y espalda baja',
+    'En cuatro apoyos, manos bajo los hombros y rodillas bajo la cadera.',
+    ['Exhala y redondea la espalda, metiendo la barbilla.', 'Inhala y hunde la espalda, subiendo la mirada.', 'Hazlo despacio, 10 repeticiones.'],
+    ['Moverte muy rápido.', 'Forzar el arco hacia abajo.'],
+    'Va muy bien después de entrenar piernas y espalda baja.', []);
 
   const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
   const byName = {};
@@ -367,6 +489,14 @@
     const x = (u - 1.8) / 1.8; return { e: 1 - x * x * (3 - 2 * x), label: '🌬️ Vuelve lento (inhala)' };
   }
 
+  // Estiramiento: va despacio al final, mantiene unos segundos y vuelve
+  function stretchPhase(sec) {
+    const T = 7, u = sec % T;
+    if (u < 1.6) { const x = u / 1.6; return { e: x * x * (3 - 2 * x), label: '🌬️ Estira despacio' }; }
+    if (u < 5.4) return { e: 1, label: '🧘 Mantén 20-30 s y respira profundo' };
+    const x = (u - 5.4) / 1.6; return { e: 1 - x * x * (3 - 2 * x), label: '↩ Suelta con calma' };
+  }
+
   function mount(svg, label, key) {
     const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
     const p = P[key];
@@ -375,9 +505,14 @@
     let raf, t0 = performance.now();
     const tick = (now) => {
       const sec = (now - t0) / 1000;
-      if (p.fn) { svg.innerHTML = drawPose(key, 0, sec); label.textContent = '🚴 Pedalea suave, respira normal'; }
+      if (p.fn) { svg.innerHTML = drawPose(key, 0, sec); label.textContent = p.label || '🚴 Pedalea suave, respira normal'; }
       else if (key === 'plank') { const e = 0.5 - 0.5 * Math.cos(sec * 2); svg.innerHTML = drawPose(key, e, sec); label.textContent = '🧱 Mantén el cuerpo recto, respira'; }
-      else { const ph = phase(sec); svg.innerHTML = drawPose(key, ph.e, sec); label.textContent = ph.label; }
+      else if (p.stretch) { const ph = stretchPhase(sec); svg.innerHTML = drawPose(key, ph.e, sec); label.textContent = ph.label; }
+      else {
+        const ph = phase(sec); svg.innerHTML = drawPose(key, ph.e, sec);
+        const L = p.labels, i = ph.label.startsWith('Pos') ? 0 : ph.label.startsWith('💨') ? 1 : ph.label.startsWith('✊') ? 2 : 3;
+        label.textContent = L ? L[i] : ph.label;
+      }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
