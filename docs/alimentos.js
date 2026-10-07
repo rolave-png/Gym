@@ -52,7 +52,8 @@
     ['Café con leche de coco de lata (un chorrito)', 'cafe con leche de coco lata crema', 52, 0.6, 1, 5, 'taza', 240],
     ['Leche de coco de lata', 'leche coco lata crema', 197, 2, 3, 21, 'cucharada', 15],
     ['Bebida de coco (de caja)', 'bebida leche coco vegetal caja', 20, 0.2, 1, 1.8, 'vaso', 240],
-    ['Pastel de coliflor (con huevo y queso)', 'pastel coliflor tarta budin queque', 150, 9, 8, 9, 'porción', 150],
+    ['Pastel de coliflor (como pastel de papas: carne molida y puré de coliflor)', 'pastel coliflor papas carne molida pino puré pure', 105, 8, 5, 6, 'porción', 300],
+    ['Pastel de coliflor horneado con huevo y queso (sin carne)', 'pastel coliflor tarta budin queque huevo queso horneado', 150, 9, 8, 9, 'porción', 150],
     // Frutas
     ['Plátano (banana)', 'platano banana', 89, 1.1, 23, 0.3, 'plátano', 120],
     ['Manzana', 'manzana', 52, 0.3, 14, 0.2, 'manzana', 180],
