@@ -45,6 +45,14 @@
     ['Queso crema', 'queso crema', 342, 6, 4, 34, 'cucharada', 15],
     ['Mantequilla', 'mantequilla', 717, 0.9, 0.1, 81, 'cucharadita', 5],
     ['Aceite de oliva', 'aceite oliva', 884, 0, 0, 100, 'cucharada', 14],
+    // Bebidas con café y platos caseros (aproximados: varían según la receta)
+    ['Café negro (sin azúcar)', 'cafe negro americano espresso', 1, 0.1, 0, 0, 'taza', 240],
+    ['Café con leche entera (mitad y mitad)', 'cafe con leche entera', 30, 1.6, 2.4, 1.6, 'taza', 240],
+    ['Café con bebida de coco (de caja), sin azúcar', 'cafe con leche de coco bebida vegetal', 11, 0.1, 0.5, 0.9, 'taza', 240],
+    ['Café con leche de coco de lata (un chorrito)', 'cafe con leche de coco lata crema', 52, 0.6, 1, 5, 'taza', 240],
+    ['Leche de coco de lata', 'leche coco lata crema', 197, 2, 3, 21, 'cucharada', 15],
+    ['Bebida de coco (de caja)', 'bebida leche coco vegetal caja', 20, 0.2, 1, 1.8, 'vaso', 240],
+    ['Pastel de coliflor (con huevo y queso)', 'pastel coliflor tarta budin queque', 150, 9, 8, 9, 'porción', 150],
     // Frutas
     ['Plátano (banana)', 'platano banana', 89, 1.1, 23, 0.3, 'plátano', 120],
     ['Manzana', 'manzana', 52, 0.3, 14, 0.2, 'manzana', 180],
