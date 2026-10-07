@@ -154,3 +154,7 @@ textarea{background:#0f172a;border:1px solid var(--line);color:var(--text);borde
 
 .qty{display:flex;gap:8px}.qty input{flex:1;min-width:0}.qty select{flex:1.4;background:#0f172a;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px;font:inherit;min-width:0}
 #results .grp{margin:10px 0 2px;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em}
+
+.aifood{display:block;width:100%;margin-top:12px;background:#14532d;color:#fff;border:0;border-radius:10px;padding:11px 12px;font:inherit;font-weight:600;cursor:pointer;text-align:center}
+.aifood:disabled{opacity:.5}
+#results .aifood{border-bottom:0}

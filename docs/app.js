@@ -309,17 +309,18 @@ async function searchFoods(q) {
 }
 let picked = null, timer, lastQ = '';
 const gramsNow = () => { const v = +$('#grams').value || 0; return picked && picked.unit && $('#qtyMode').value === 'u' ? v * picked.unit.g : v; };
-const plural = (u, n) => (n === 1 ? u : /[aeiou]$/.test(u) ? u + 's' : u + 'es');
+const plural = (u, n) => (n === 1 ? u : /ón$/.test(u) ? u.replace(/ón$/, 'ones') : /[aeiou]$/.test(u) ? u + 's' : u + 'es');
 const updKcal = () => {
   const g = gramsNow();
   $('#pickKcal').textContent = picked ? Math.round(picked.kcal100 * g / 100) : 0;
-  $('#pickGrams').textContent = picked && picked.unit && $('#qtyMode').value === 'u' ? `≈ ${Math.round(g)} g` : '';
+  $('#pickGrams').textContent = picked && picked.unit && !picked.ai && $('#qtyMode').value === 'u' ? `≈ ${Math.round(g)} g` : '';
 };
 function pickFood(f) {
   picked = f; $('#pickName').textContent = f.name;
-  $('#pickInfo').textContent = `${f.kcal100} kcal · P ${f.protein100}g · C ${f.carbs100}g · G ${f.fat100}g por 100 g${f.generic ? ' (valores aproximados)' : ''}`;
+  $('#pickInfo').textContent = f.ai ? `${f.kcal100} kcal · P ${f.protein100}g · C ${f.carbs100}g · G ${f.fat100}g por ración (estimado por IA${f.notes ? ': ' + f.notes : ''}). Puedes cambiar las raciones o corregirlo después con ✏️.` : `${f.kcal100} kcal · P ${f.protein100}g · C ${f.carbs100}g · G ${f.fat100}g por 100 g${f.generic ? ' (valores aproximados)' : ''}`;
   const sel = $('#qtyMode');
-  if (f.unit) { sel.innerHTML = `<option value="u">${esc(f.unit.name)} (≈ ${f.unit.g} g)</option><option value="g">gramos</option>`; sel.value = 'u'; $('#grams').value = 1; }
+  if (f.ai) { sel.innerHTML = '<option value="u">ración</option>'; sel.value = 'u'; $('#grams').value = 1; }
+  else if (f.unit) { sel.innerHTML = `<option value="u">${esc(f.unit.name)} (≈ ${f.unit.g} g)</option><option value="g">gramos</option>`; sel.value = 'u'; $('#grams').value = 1; }
   else { sel.innerHTML = '<option value="g">gramos</option>'; sel.value = 'g'; $('#grams').value = 100; }
   $('#pick').hidden = false; updKcal(); $('#grams').focus(); $('#grams').select();
 }
@@ -329,9 +330,21 @@ function renderFoods(local, off, note) {
   let html = '';
   if (local.length) html += `<p class="muted grp">Alimentos básicos</p>` + local.map((f, i) => row(f, i)).join('');
   if (off.length) html += `<p class="muted grp">Productos de supermercado</p>` + off.map((f, i) => row(f, local.length + i)).join('');
-  html += note ? `<p class="muted">${note}</p>` : (!html ? '<p class="muted">Sin resultados. Prueba con otra palabra o usa «Poner kcal a mano».</p>' : '');
+  html += note ? `<p class="muted">${note}</p>` : (!html ? '<p class="muted">No lo encuentro en la lista.</p>' : '');
+  html += `<button type="button" class="aifood" id="aiFood">✨ ¿No está? Calcular «${esc($('#q').value.trim())}» con IA</button><p class="muted" id="aiMsg" aria-live="polite"></p>`;
   $('#results').innerHTML = html;
+  $('#aiFood').onclick = aiFood;
   document.querySelectorAll('#results [data-i]').forEach((b) => b.onclick = () => pickFood(window._foods[+b.dataset.i]));
+}
+// Cualquier comida o bebida que no esté en la lista: la IA la estima a partir de lo que escribes
+async function aiFood() {
+  const q = $('#q').value.trim(), msg = $('#aiMsg'); if (!q) return;
+  if (!db.settings.apiKey) { msg.textContent = '⚠️ Para calcular con IA pon tu clave de Gemini en ⚙️ Ajustes.'; return; }
+  $('#aiFood').disabled = true; msg.textContent = '✨ Calculando…';
+  try {
+    const info = await analyze(null, q, (t) => { msg.textContent = t; });
+    pickFood({ name: String(info.name || q).slice(0, 80), kcal100: n0(info.calories), protein100: n0(info.protein), carbs100: n0(info.carbs), fat100: n0(info.fat), unit: { name: 'ración', g: 100 }, ai: true, notes: String(info.notes || '').slice(0, 120) });
+  } catch (err) { msg.textContent = '⚠️ ' + errMsg(err); $('#aiFood').disabled = false; }
 }
 $('#searchBtn').onclick = () => { picked = null; $('#pick').hidden = true; $('#results').innerHTML = ''; $('#q').value = ''; $('#dlg').showModal(); $('#q').focus(); };
 $('#q').oninput = () => {
@@ -349,7 +362,7 @@ $('#grams').oninput = updKcal; $('#qtyMode').onchange = () => { if (picked && pi
 $('#foodForm').onsubmit = async (e) => {
   if (e.submitter?.id !== 'addFood' || !picked) return;
   const g = gramsNow(), k = g / 100, qty = +$('#grams').value || 0, inUnits = picked.unit && $('#qtyMode').value === 'u';
-  const label = inUnits ? `${qty} ${plural(picked.unit.name, qty)} ≈ ${Math.round(g)} g` : `${Math.round(g)} g`;
+  const label = picked.ai ? `${qty} ${plural('ración', qty)}` : inUnits ? `${qty} ${plural(picked.unit.name, qty)} ≈ ${Math.round(g)} g` : `${Math.round(g)} g`;
   addMeal(date, { name: `${picked.name} (${label})`, calories: picked.kcal100 * k,
     protein: picked.protein100 * k, carbs: picked.carbs100 * k, fat: picked.fat100 * k });
   loadMeals();
