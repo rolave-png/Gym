@@ -307,32 +307,50 @@ async function searchFoods(q) {
     protein100: +(p.nutriments.proteins_100g || 0), carbs100: +(p.nutriments.carbohydrates_100g || 0), fat100: +(p.nutriments.fat_100g || 0),
   }));
 }
-let picked = null, timer;
-const updKcal = () => { $('#pickKcal').textContent = picked ? Math.round(picked.kcal100 * (+$('#grams').value || 0) / 100) : 0; };
+let picked = null, timer, lastQ = '';
+const gramsNow = () => { const v = +$('#grams').value || 0; return picked && picked.unit && $('#qtyMode').value === 'u' ? v * picked.unit.g : v; };
+const plural = (u, n) => (n === 1 ? u : /[aeiou]$/.test(u) ? u + 's' : u + 'es');
+const updKcal = () => {
+  const g = gramsNow();
+  $('#pickKcal').textContent = picked ? Math.round(picked.kcal100 * g / 100) : 0;
+  $('#pickGrams').textContent = picked && picked.unit && $('#qtyMode').value === 'u' ? `≈ ${Math.round(g)} g` : '';
+};
+function pickFood(f) {
+  picked = f; $('#pickName').textContent = f.name;
+  $('#pickInfo').textContent = `${f.kcal100} kcal · P ${f.protein100}g · C ${f.carbs100}g · G ${f.fat100}g por 100 g${f.generic ? ' (valores aproximados)' : ''}`;
+  const sel = $('#qtyMode');
+  if (f.unit) { sel.innerHTML = `<option value="u">${esc(f.unit.name)} (≈ ${f.unit.g} g)</option><option value="g">gramos</option>`; sel.value = 'u'; $('#grams').value = 1; }
+  else { sel.innerHTML = '<option value="g">gramos</option>'; sel.value = 'g'; $('#grams').value = 100; }
+  $('#pick').hidden = false; updKcal(); $('#grams').focus(); $('#grams').select();
+}
+function renderFoods(local, off, note) {
+  window._foods = [...local, ...off];
+  const row = (f, i) => `<button type="button" data-i="${i}">${esc(f.name)} <small>· ${f.kcal100} kcal/100g</small></button>`;
+  let html = '';
+  if (local.length) html += `<p class="muted grp">Alimentos básicos</p>` + local.map((f, i) => row(f, i)).join('');
+  if (off.length) html += `<p class="muted grp">Productos de supermercado</p>` + off.map((f, i) => row(f, local.length + i)).join('');
+  html += note ? `<p class="muted">${note}</p>` : (!html ? '<p class="muted">Sin resultados. Prueba con otra palabra o usa «Poner kcal a mano».</p>' : '');
+  $('#results').innerHTML = html;
+  document.querySelectorAll('#results [data-i]').forEach((b) => b.onclick = () => pickFood(window._foods[+b.dataset.i]));
+}
 $('#searchBtn').onclick = () => { picked = null; $('#pick').hidden = true; $('#results').innerHTML = ''; $('#q').value = ''; $('#dlg').showModal(); $('#q').focus(); };
 $('#q').oninput = () => {
   clearTimeout(timer);
+  const q = $('#q').value.trim(); lastQ = q;
+  if (q.length < 2) { $('#results').innerHTML = ''; return; }
+  const local = window.searchLocalFoods ? window.searchLocalFoods(q) : [];
+  renderFoods(local, [], '🔎 Buscando también productos de supermercado…');   // lo básico aparece al instante
   timer = setTimeout(async () => {
-    const q = $('#q').value.trim(); if (q.length < 2) return;
-    $('#results').innerHTML = '<p class="muted">Buscando…</p>';
-    try {
-      const foods = await searchFoods(q);
-      window._foods = foods;
-      $('#results').innerHTML = foods.map((f, i) => `<button type="button" data-i="${i}">${esc(f.name)} <small>· ${f.kcal100} kcal/100g</small></button>`).join('') || '<p class="muted">Sin resultados.</p>';
-      document.querySelectorAll('#results [data-i]').forEach((b) => b.onclick = () => {
-        picked = window._foods[+b.dataset.i];
-        $('#pickName').textContent = picked.name;
-        $('#pickInfo').textContent = `${picked.kcal100} kcal · P ${picked.protein100}g · C ${picked.carbs100}g · G ${picked.fat100}g por 100 g`;
-        $('#pick').hidden = false; updKcal(); $('#grams').focus();
-      });
-    } catch (err) { $('#results').innerHTML = `<p class="muted">⚠️ ${esc(err.message)}</p>`; }
-  }, 400);
+    try { const off = await searchFoods(q); if (q === lastQ) renderFoods(local, off, ''); }
+    catch { if (q === lastQ) renderFoods(local, [], 'No pude consultar los productos de supermercado (sin conexión).'); }
+  }, 450);
 };
-$('#grams').oninput = updKcal;
+$('#grams').oninput = updKcal; $('#qtyMode').onchange = () => { if (picked && picked.unit) $('#grams').value = $('#qtyMode').value === 'u' ? 1 : picked.unit.g; updKcal(); };
 $('#foodForm').onsubmit = async (e) => {
   if (e.submitter?.id !== 'addFood' || !picked) return;
-  const k = (+$('#grams').value || 0) / 100;
-  addMeal(date, { name: `${picked.name} (${$('#grams').value} g)`, calories: picked.kcal100 * k,
+  const g = gramsNow(), k = g / 100, qty = +$('#grams').value || 0, inUnits = picked.unit && $('#qtyMode').value === 'u';
+  const label = inUnits ? `${qty} ${plural(picked.unit.name, qty)} ≈ ${Math.round(g)} g` : `${Math.round(g)} g`;
+  addMeal(date, { name: `${picked.name} (${label})`, calories: picked.kcal100 * k,
     protein: picked.protein100 * k, carbs: picked.carbs100 * k, fat: picked.fat100 * k });
   loadMeals();
 };

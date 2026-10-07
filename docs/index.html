@@ -93,7 +93,8 @@
   <div id="results"></div>
   <div id="pick" hidden>
     <p><b id="pickName"></b><br><small class="muted" id="pickInfo"></small></p>
-    <input id="grams" type="number" min="1" value="100" placeholder="Gramos">
+    <div class="qty"><input id="grams" type="number" min="0.1" step="any" value="100" inputmode="decimal"><select id="qtyMode"><option value="g">gramos</option></select></div>
+    <small class="muted" id="pickGrams"></small>
     <p>= <b id="pickKcal"></b> kcal</p>
     <button class="btn primary" id="addFood" value="ok">Añadir</button>
   </div>
@@ -180,6 +181,7 @@
   <div class="row"><button class="btn" value="cancel">Cerrar</button><button class="btn primary" value="ok">Guardar</button></div>
 </form></dialog>
 <script src="guia.js"></script>
+<script src="alimentos.js"></script>
 <script src="app.js"></script>
 <script src="bienestar.js"></script>
 <script src="plantillas.js"></script>
