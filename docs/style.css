@@ -158,3 +158,5 @@ textarea{background:#0f172a;border:1px solid var(--line);color:var(--text);borde
 .aifood{display:block;width:100%;margin-top:12px;background:#14532d;color:#fff;border:0;border-radius:10px;padding:11px 12px;font:inherit;font-weight:600;cursor:pointer;text-align:center}
 .aifood:disabled{opacity:.5}
 #results .aifood{border-bottom:0}
+
+.chip.chile{margin-top:8px}

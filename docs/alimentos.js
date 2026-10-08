@@ -24,7 +24,7 @@
     ['Fideos o pasta cocida', 'fideos pasta tallarines espagueti cocida', 158, 5.8, 31, 0.9, 'taza', 140],
     ['Quinoa cocida', 'quinoa quinua', 120, 4.4, 21, 1.9, 'taza', 160],
     ['Avena en hojuelas (cruda)', 'avena hojuelas copos', 379, 13, 67, 6.5, 'cucharada', 10],
-    ['Pan marraqueta o pan francés', 'pan marraqueta francés frances hallulla', 270, 9, 55, 1.5, 'mitad', 55],
+    ['Pan francés (tipo baguette)', 'pan francés frances', 270, 9, 55, 1.5, 'mitad', 55],
     ['Pan de molde blanco', 'pan molde blanco rebanada', 265, 9, 49, 3.2, 'rebanada', 30],
     ['Pan integral', 'pan integral molde', 247, 13, 41, 3.4, 'rebanada', 30],
     ['Tortilla de trigo (wrap)', 'tortilla wrap trigo harina', 306, 8, 50, 8, 'unidad', 45],
@@ -107,9 +107,62 @@
     ['Hamburguesa con pan', 'hamburguesa pan', 295, 17, 24, 14, 'unidad', 200],
     ['Proteína en polvo (whey)', 'proteina polvo whey suero', 400, 80, 8, 6, 'medida', 30],
   ];
+
+  // Comida chilena (aproximada: varía mucho según la receta y el tamaño)
+  const C = [
+    ['Marraqueta entera (pan)', 'marraqueta batido pan chileno', 270, 9, 55, 1.5, 'marraqueta', 110],
+    ['Hallulla', 'hallulla pan chileno', 300, 8, 53, 6, 'hallulla', 80],
+    ['Pan amasado', 'pan amasado casero chileno', 280, 8, 55, 3, 'unidad', 90],
+    ['Sopaipilla (frita)', 'sopaipilla sopaipillas frita zapallo', 350, 6, 42, 17, 'sopaipilla', 60],
+    ['Sopaipilla pasada (con chancaca)', 'sopaipilla sopaipillas pasada pasadas chancaca', 330, 4, 50, 13, 'sopaipilla', 90],
+    ['Empanada de pino (al horno)', 'empanada pino horno carne cebolla huevo aceituna', 270, 9, 28, 13, 'empanada', 180],
+    ['Empanada de queso (frita)', 'empanada queso frita', 350, 12, 30, 21, 'empanada', 120],
+    ['Completo italiano (palta, tomate, mayonesa)', 'completo italiano hot dog chileno vienesa palta', 215, 7, 17, 13, 'completo', 220],
+    ['Completo tradicional (con mayonesa)', 'completo tradicional hot dog chileno vienesa mayonesa', 240, 7, 18, 15, 'completo', 230],
+    ['Choripán', 'choripan chorizo pan', 300, 12, 25, 17, 'choripán', 180],
+    ['Lomito con palta (sándwich)', 'lomito palta sandwich cerdo', 240, 13, 20, 12, 'sándwich', 280],
+    ['Barros Luco (carne y queso)', 'barros luco carne queso sandwich churrasco', 270, 15, 22, 14, 'sándwich', 250],
+    ['Barros Jarpa (jamón y queso)', 'barros jarpa jamon queso sandwich tostado', 280, 13, 22, 15, 'sándwich', 220],
+    ['Churrasco con palta o tomate', 'churrasco palta tomate sandwich', 250, 14, 20, 12, 'sándwich', 260],
+    ['Ave palta (pollo y palta)', 'ave palta pollo sandwich', 220, 12, 20, 10, 'sándwich', 250],
+    ['Pastel de choclo', 'pastel choclo pino pollo carne', 155, 8, 14, 7, 'porción', 350],
+    ['Pastel de papas', 'pastel papas pino carne puré pure', 130, 6, 14, 5, 'porción', 350],
+    ['Cazuela de vacuno o pollo', 'cazuela vacuno pollo ave sopa papa choclo zapallo', 85, 5, 8, 3.5, 'plato', 450],
+    ['Porotos granados', 'porotos granados choclo zapallo albahaca', 90, 4, 14, 2, 'plato', 400],
+    ['Lentejas guisadas con verduras', 'lentejas guisadas guiso legumbres', 110, 6, 18, 1.5, 'plato', 350],
+    ['Charquicán', 'charquican papa zapallo carne guiso', 110, 6, 11, 4.5, 'plato', 350],
+    ['Humitas', 'humitas humita choclo albahaca', 140, 3, 24, 4, 'humita', 120],
+    ['Arroz con pollo', 'arroz pollo guiso', 150, 9, 20, 4, 'plato', 350],
+    ['Tallarines con salsa de carne', 'tallarines fideos salsa carne bolonesa boloñesa pasta', 150, 7, 22, 4, 'plato', 350],
+    ['Pollo asado (carne con piel)', 'pollo asado cuarto piel', 240, 27, 0, 14, 'cuarto de pollo', 140],
+    ['Pernil de cerdo asado', 'pernil cerdo chancho asado', 240, 25, 0, 15, 'porción', 150],
+    ['Costillar de cerdo', 'costillar costillas cerdo chancho', 300, 22, 0, 24, 'porción', 150],
+    ['Asado de tira (a la parrilla)', 'asado tira vacuno parrilla costillar carne', 330, 22, 0, 27, 'trozo', 120],
+    ['Merluza frita', 'merluza frita pescado', 220, 16, 8, 14, 'filete', 150],
+    ['Ceviche de reineta', 'ceviche reineta pescado', 110, 17, 3, 3, 'plato', 200],
+    ['Machas a la parmesana', 'machas parmesana marisco queso', 180, 18, 4, 10, 'porción', 150],
+    ['Caldillo de congrio', 'caldillo congrio sopa pescado', 70, 6, 5, 3, 'plato', 400],
+    ['Pebre', 'pebre salsa tomate cebolla cilantro aji', 45, 1, 6, 2, 'cucharada', 20],
+    ['Ensalada chilena (tomate y cebolla)', 'ensalada chilena tomate cebolla cilantro', 55, 1, 6, 3, 'porción', 150],
+    ['Mote con huesillo', 'mote huesillo huesillos bebida durazno', 72, 1, 17, 0.1, 'vaso', 400],
+    ['Sémola con leche', 'semola leche postre', 120, 3, 20, 3, 'plato', 200],
+    ['Arroz con leche', 'arroz leche postre', 140, 3, 25, 3, 'plato', 200],
+    ['Leche asada', 'leche asada postre flan', 150, 5, 20, 5, 'porción', 150],
+    ['Manjar (dulce de leche)', 'manjar dulce leche', 320, 6, 56, 8, 'cucharada', 20],
+    ['Kuchen (manzana, frambuesa o nuez)', 'kuchen pastel torta', 280, 4, 38, 12, 'trozo', 100],
+    ['Alfajor de manjar', 'alfajor manjar chocolate', 400, 5, 62, 15, 'alfajor', 40],
+    ['Berlín (bola de Berlín)', 'berlin berlines bola relleno manjar crema', 340, 6, 45, 15, 'berlín', 90],
+    ['Calzones rotos', 'calzones rotos calzon frito', 480, 5, 55, 25, 'unidad', 25],
+    ['Pisco sour', 'pisco sour trago alcohol', 138, 0.2, 10, 0, 'vaso', 120],
+    ['Terremoto (pipeño con helado)', 'terremoto pipeño pipeno helado trago', 110, 0.5, 12, 0, 'vaso', 400],
+    ['Mate (yerba mate, sin azúcar)', 'mate yerba infusion té', 1, 0, 0, 0, 'taza', 240],
+  ];
+
   const norm = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   const stem = (t) => (t.length > 4 ? t.replace(/(es|s)$/, '') : t.replace(/s$/, ''));
-  const FOODS = F.map(([name, alias, kcal, p, c, f, unit, g]) => ({ name, kcal100: kcal, protein100: p, carbs100: c, fat100: f, unit: unit ? { name: unit, g } : null, generic: true, key: norm(name + ' ' + alias) }));
+  const mk = (chile) => ([name, alias, kcal, p, c, f, unit, g]) => ({ name, kcal100: kcal, protein100: p, carbs100: c, fat100: f, unit: unit ? { name: unit, g } : null, generic: true, chile, key: norm(name + ' ' + alias + (chile ? ' chile chilena chileno' : '')) });
+  const CHILE = C.map(mk(true));
+  const FOODS = [...F.map(mk(false)), ...CHILE];
   // Busca por palabras sueltas; "huevos" encuentra "huevo", "papas" encuentra "papa"
   window.searchLocalFoods = (q) => {
     const toks = norm(q).split(/\s+/).filter(Boolean).map(stem); if (!toks.length) return [];
@@ -117,5 +170,6 @@
     return FOODS.filter((x) => toks.every((t) => x.key.includes(t)))
       .sort((a, b) => (norm(b.name).startsWith(first) - norm(a.name).startsWith(first))).slice(0, 12);
   };
+  window.chileanFoods = () => CHILE;
   window.FOODS_COUNT = FOODS.length;
 })();

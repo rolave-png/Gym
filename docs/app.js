@@ -181,13 +181,13 @@ const errMsg = (err) => {
   return m;
 };
 
-const PROMPT = `Eres un nutricionista. Analiza la foto de comida y estima su contenido nutricional para la porción que se ve.
+const PROMPT = `Eres un nutricionista. La persona vive en Chile: entiende los nombres de comidas chilenas (completo, pastel de choclo, cazuela, sopaipilla, pino, etc.). Analiza la foto de comida y estima su contenido nutricional para la porción que se ve.
 Responde SOLO con JSON válido, sin texto adicional, con este formato:
 {"name": "nombre breve del plato en español", "calories": número, "protein": gramos, "carbs": gramos, "fat": gramos, "items": [{"name": "alimento", "calories": número}], "notes": "supuestos sobre la porción, máx. 1 frase"}
 Si dudas entre ingredientes parecidos (por ejemplo pollo, cerdo o vacuno), elige el más probable y menciónalo en "notes".
 Si el usuario añade una nota o una corrección, tiene prioridad sobre lo que creas ver en la foto.
 Si no hay comida en la imagen, responde {"error": "No veo comida en la foto"}.`;
-const PROMPT_TXT = `Eres un nutricionista. Estima el contenido nutricional de esta comida según la descripción del usuario. Si no indica cantidades, supón una ración normal para un adulto.
+const PROMPT_TXT = `Eres un nutricionista. La persona vive en Chile: entiende los nombres de comidas chilenas (completo, pastel de choclo, cazuela, sopaipilla, pino, etc.). Estima el contenido nutricional de esta comida según la descripción del usuario. Si no indica cantidades, supón una ración normal para un adulto.
 Responde SOLO con JSON válido, sin texto adicional, con este formato:
 {"name": "nombre breve del plato en español", "calories": número, "protein": gramos, "carbs": gramos, "fat": gramos, "items": [{"name": "alimento", "calories": número}], "notes": "supuestos sobre las porciones, máx. 1 frase"}`;
 
@@ -330,11 +330,13 @@ function pickFood(f) {
   $('#pick').hidden = false; updKcal(); $('#grams').focus(); $('#grams').select();
 }
 function renderFoods(local, off, note) {
-  window._foods = [...local, ...off];
+  const basics = local.filter((f) => !f.chile), chile = local.filter((f) => f.chile);
+  window._foods = [...basics, ...chile, ...off];
   const row = (f, i) => `<button type="button" data-i="${i}">${esc(f.name)} <small>· ${f.kcal100} kcal/100g</small></button>`;
-  let html = '';
-  if (local.length) html += `<p class="muted grp">Alimentos básicos</p>` + local.map((f, i) => row(f, i)).join('');
-  if (off.length) html += `<p class="muted grp">Productos de supermercado</p>` + off.map((f, i) => row(f, local.length + i)).join('');
+  let html = '', i = 0;
+  if (basics.length) html += `<p class="muted grp">Alimentos básicos</p>` + basics.map((f) => row(f, i++)).join('');
+  if (chile.length) html += `<p class="muted grp">🇨🇱 Comida chilena</p>` + chile.map((f) => row(f, i++)).join('');
+  if (off.length) html += `<p class="muted grp">Productos de supermercado</p>` + off.map((f) => row(f, i++)).join('');
   html += note ? `<p class="muted">${note}</p>` : (!html ? '<p class="muted">No lo encuentro en la lista.</p>' : '');
   $('#results').innerHTML = html;
   document.querySelectorAll('#results [data-i]').forEach((b) => b.onclick = () => pickFood(window._foods[+b.dataset.i]));
@@ -353,6 +355,7 @@ async function aiFood() {
   aiBusy = false; $('#aiFood').disabled = false;
 }
 $('#aiFood').onclick = aiFood;
+$('#chileBtn').onclick = () => { clearTimeout(timer); lastQ = ''; $('#q').value = ''; $('#aiBox').hidden = true; picked = null; $('#pick').hidden = true; renderFoods(window.chileanFoods ? window.chileanFoods() : [], [], ''); };
 $('#searchBtn').onclick = () => { $('#aiBox').hidden = true; $('#aiMsg').textContent = ''; picked = null; $('#pick').hidden = true; $('#results').innerHTML = ''; $('#q').value = ''; $('#dlg').showModal(); $('#q').focus(); };
 $('#q').oninput = () => {
   clearTimeout(timer);
