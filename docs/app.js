@@ -169,6 +169,11 @@ function readRaw(file) {
     r.readAsDataURL(file);
   });
 }
+// fetch con tiempo máximo de espera: si la conexión se cuelga, no se queda "Calculando…" para siempre
+function fetchT(url, opts = {}, ms = 40000) {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), ms);
+  return fetch(url, { ...opts, signal: ctl.signal }).catch((e) => { throw e && e.name === 'AbortError' ? Object.assign(new Error('La conexión tardó demasiado. Inténtalo de nuevo en un momento.'), { timeout: true }) : e; }).finally(() => clearTimeout(t));
+}
 const errMsg = (err) => {
   const m = err && err.message ? err.message : '';
   if (!m) return 'No se pudo procesar la foto. Prueba con otra o usa «Buscar alimento».';
@@ -190,7 +195,7 @@ const GEM = 'https://generativelanguage.googleapis.com/v1beta/';
 
 // Elige un modelo "flash" disponible para esta clave (los nombres cambian con el tiempo)
 async function listModels() {
-  const r = await fetch(GEM + 'models?pageSize=200', { headers: { 'x-goog-api-key': db.settings.apiKey } });
+  const r = await fetchT(GEM + 'models?pageSize=200', { headers: { 'x-goog-api-key': db.settings.apiKey } }, 15000);
   if (!r.ok) throw new Error(`No se pudo listar modelos (${r.status}). Revisa la clave en Ajustes.`);
   const list = (await r.json()).models || [];
   const ver = (n) => parseFloat((n.match(/gemini-(\d+(?:\.\d+)?)/) || [])[1]) || 0;
@@ -205,14 +210,14 @@ async function listModels() {
 const detectModel = async () => (await listModels())[0];
 
 async function callGemini(model, base64, note, mime = 'image/jpeg') {
-  return fetch(`${GEM}models/${encodeURIComponent(model)}:generateContent`, {
+  return fetchT(`${GEM}models/${encodeURIComponent(model)}:generateContent`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-goog-api-key': db.settings.apiKey },
     body: JSON.stringify({
       contents: [{ parts: base64 ? [{ inline_data: { mime_type: mime, data: base64 } }, { text: PROMPT + (note ? `\nNota del usuario: ${note}` : '') }] : [{ text: PROMPT_TXT + `\nDescripción del usuario: ${note}` }] }],
       generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
     }),
-  });
+  }, 40000);
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -298,7 +303,7 @@ $('#photo').onchange = async (e) => {
 async function searchFoods(q) {
   const url = 'https://world.openfoodfacts.org/cgi/search.pl?search_simple=1&action=process&json=1&page_size=15'
     + '&fields=product_name,brands,nutriments&search_terms=' + encodeURIComponent(q);
-  const r = await fetch(url);
+  const r = await fetchT(url, {}, 8000);
   if (!r.ok) throw new Error('Open Food Facts ' + r.status);
   const j = await r.json();
   return (j.products || []).filter((p) => p.product_name && p.nutriments?.['energy-kcal_100g'] != null).slice(0, 10).map((p) => ({
@@ -331,31 +336,35 @@ function renderFoods(local, off, note) {
   if (local.length) html += `<p class="muted grp">Alimentos básicos</p>` + local.map((f, i) => row(f, i)).join('');
   if (off.length) html += `<p class="muted grp">Productos de supermercado</p>` + off.map((f, i) => row(f, local.length + i)).join('');
   html += note ? `<p class="muted">${note}</p>` : (!html ? '<p class="muted">No lo encuentro en la lista.</p>' : '');
-  html += `<button type="button" class="aifood" id="aiFood">✨ ¿No está? Calcular «${esc($('#q').value.trim())}» con IA</button><p class="muted" id="aiMsg" aria-live="polite"></p>`;
   $('#results').innerHTML = html;
-  $('#aiFood').onclick = aiFood;
   document.querySelectorAll('#results [data-i]').forEach((b) => b.onclick = () => pickFood(window._foods[+b.dataset.i]));
 }
 // Cualquier comida o bebida que no esté en la lista: la IA la estima a partir de lo que escribes
+let aiBusy = false;
 async function aiFood() {
-  const q = $('#q').value.trim(), msg = $('#aiMsg'); if (!q) return;
+  const q = $('#q').value.trim(), msg = $('#aiMsg'); if (!q || aiBusy) return;
   if (!db.settings.apiKey) { msg.textContent = '⚠️ Para calcular con IA pon tu clave de Gemini en ⚙️ Ajustes.'; return; }
-  $('#aiFood').disabled = true; msg.textContent = '✨ Calculando…';
+  aiBusy = true; $('#aiFood').disabled = true; msg.textContent = '✨ Calculando…';
   try {
     const info = await analyze(null, q, (t) => { msg.textContent = t; });
     pickFood({ name: String(info.name || q).slice(0, 80), kcal100: n0(info.calories), protein100: n0(info.protein), carbs100: n0(info.carbs), fat100: n0(info.fat), unit: { name: 'ración', g: 100 }, ai: true, notes: String(info.notes || '').slice(0, 120) });
-  } catch (err) { msg.textContent = '⚠️ ' + errMsg(err); $('#aiFood').disabled = false; }
+    msg.textContent = '';
+  } catch (err) { msg.textContent = '⚠️ ' + errMsg(err); }
+  aiBusy = false; $('#aiFood').disabled = false;
 }
-$('#searchBtn').onclick = () => { picked = null; $('#pick').hidden = true; $('#results').innerHTML = ''; $('#q').value = ''; $('#dlg').showModal(); $('#q').focus(); };
+$('#aiFood').onclick = aiFood;
+$('#searchBtn').onclick = () => { $('#aiBox').hidden = true; $('#aiMsg').textContent = ''; picked = null; $('#pick').hidden = true; $('#results').innerHTML = ''; $('#q').value = ''; $('#dlg').showModal(); $('#q').focus(); };
 $('#q').oninput = () => {
   clearTimeout(timer);
   const q = $('#q').value.trim(); lastQ = q;
+  $('#aiBox').hidden = q.length < 2;
   if (q.length < 2) { $('#results').innerHTML = ''; return; }
+  $('#aiFood').textContent = `✨ ¿No está? Calcular «${q}» con IA`; if (!aiBusy) $('#aiMsg').textContent = '';
   const local = window.searchLocalFoods ? window.searchLocalFoods(q) : [];
   renderFoods(local, [], '🔎 Buscando también productos de supermercado…');   // lo básico aparece al instante
   timer = setTimeout(async () => {
     try { const off = await searchFoods(q); if (q === lastQ) renderFoods(local, off, ''); }
-    catch { if (q === lastQ) renderFoods(local, [], 'No pude consultar los productos de supermercado (sin conexión).'); }
+    catch { if (q === lastQ) renderFoods(local, [], 'Los productos de supermercado no respondieron ahora (a veces van lentos). Puedes usar «Calcular con IA».'); }
   }, 450);
 };
 $('#grams').oninput = updKcal; $('#qtyMode').onchange = () => { if (picked && picked.unit) $('#grams').value = $('#qtyMode').value === 'u' ? 1 : picked.unit.g; updKcal(); };

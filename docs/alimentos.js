@@ -54,6 +54,13 @@
     ['Bebida de coco (de caja)', 'bebida leche coco vegetal caja', 20, 0.2, 1, 1.8, 'vaso', 240],
     ['Pastel de coliflor (como pastel de papas: carne molida y puré de coliflor)', 'pastel coliflor papas carne molida pino puré pure', 105, 8, 5, 6, 'porción', 300],
     ['Pastel de coliflor horneado con huevo y queso (sin carne)', 'pastel coliflor tarta budin queque huevo queso horneado', 150, 9, 8, 9, 'porción', 150],
+    // Fiambres y embutidos (aproximados)
+    ['Arrollado de cerdo (fiambre)', 'arrollado cerdo chancho huaso fiambre', 270, 16, 1, 22, 'rebanada', 25],
+    ['Jamón de pavo', 'jamon pavo fiambre', 100, 17, 2, 2.5, 'rebanada', 20],
+    ['Salame', 'salame salami fiambre', 430, 22, 2, 37, 'rebanada', 8],
+    ['Mortadela', 'mortadela fiambre', 311, 12, 3, 28, 'rebanada', 20],
+    ['Salchicha (vienesa)', 'salchicha vienesa hot dog', 290, 11, 3, 26, 'unidad', 45],
+    ['Longaniza o chorizo cocido', 'longaniza chorizo cocido', 330, 17, 2, 28, 'unidad', 80],
     // Frutas
     ['Plátano (banana)', 'platano banana', 89, 1.1, 23, 0.3, 'plátano', 120],
     ['Manzana', 'manzana', 52, 0.3, 14, 0.2, 'manzana', 180],
