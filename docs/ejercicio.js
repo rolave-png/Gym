@@ -53,7 +53,7 @@
     editing = id || null;
     const e = id ? list(date).find((x) => x.id === id) : null;
     q('#acType').value = e ? e.type : 'gym'; q('#acMin').value = e ? e.minutes || '' : ''; q('#acKcal').value = e ? e.kcal : '';
-    q('#acTotal').checked = e ? e.active != null && e.active !== e.kcal : true; q('#acNote').value = e ? e.note || '' : '';
+    q('#acTotal').checked = e ? e.active != null && e.active !== e.kcal : db.settings.kcalTotal !== false; q('#acNote').value = e ? e.note || '' : '';
     entryDate = null; q('#acMulti').hidden = true; q('#acPhotoMsg').textContent = '';
     q('#acDay').textContent = nice(date); updPreview(); q('#actDlg').showModal();
   }
@@ -70,6 +70,7 @@
   q('#actForm').addEventListener('submit', (ev) => {
     if (ev.submitter?.value !== 'ok') return;
     const { kcal, min, active } = compute(); if (!kcal) return;
+    db.settings.kcalTotal = q('#acTotal').checked;   // recordar la elección para la próxima vez
     db.activity = db.activity || {};
     const entry = { id: editing || uid(), type: q('#acType').value, minutes: min, kcal, active: active !== kcal ? active : undefined, note: q('#acNote').value.trim().slice(0, 60) };
     const d = entryDate || date, arr = (db.activity[d] = list(d).filter((e) => e.id !== entry.id)); arr.push(entry); save();
@@ -84,7 +85,7 @@
   });
 
   // ---- Leer una foto del reloj o de Samsung Health ----
-  const WATCH_PROMPT = () => `Eres un asistente que lee pantallas de relojes inteligentes y de apps de salud (Samsung Health, Garmin, Apple, etc.). Mira la imagen y extrae los entrenamientos que se vean. Hoy es ${today()}.
+  const WATCH_PROMPT = () => `Eres un asistente que lee pantallas de relojes inteligentes y de apps de salud (Huawei Health, Samsung Health, Garmin, Apple, etc.). Mira la imagen y extrae los entrenamientos que se vean. Hoy es ${today()}.
 Responde SOLO con JSON válido y sin texto adicional, con este formato:
 {"sessions": [{"date": "AAAA-MM-DD o null", "minutes": número entero, "kcal": número, "kcal_kind": "total" | "active" | "unknown", "type": "gym" | "bici" | "camina" | "otro", "note": "texto corto o vacío"}], "error": null}
 Reglas:
@@ -112,10 +113,10 @@ Reglas:
     } catch (err) { say('⚠️ ' + errMsg(err)); }
   }
   function fillOne(s) {
-    q('#acType').value = s.type; q('#acMin').value = s.minutes || ''; q('#acKcal').value = s.kcal; q('#acTotal').checked = s.kind !== 'active';
+    q('#acType').value = s.type; q('#acMin').value = s.minutes || ''; q('#acKcal').value = s.kcal; q('#acTotal').checked = s.kind === 'unknown' ? db.settings.kcalTotal !== false : s.kind !== 'active';
     if (s.note && !q('#acNote').value) q('#acNote').value = s.note;
     entryDate = s.date && s.date !== date ? s.date : null; if (entryDate) q('#acDay').textContent = nice(entryDate);
-    say(`✅ Leí ${s.minutes ? dur(s.minutes) + ' y ' : ''}${s.kcal} kcal${s.kind === 'unknown' ? ' (no se aclara si son totales o activas: dejé «total», cámbialo si hace falta)' : s.kind === 'active' ? ' activas' : ' totales'}${entryDate ? '. La foto es del ' + nice(entryDate) + ' y se guardará en esa fecha' : ''}. Revisa y pulsa Guardar.`);
+    say(`✅ Leí ${s.minutes ? dur(s.minutes) + ' y ' : ''}${s.kcal} kcal${s.kind === 'unknown' ? ' (no se aclara si son totales o activas: usé tu última elección, cámbiala si hace falta)' : s.kind === 'active' ? ' activas' : ' totales'}${entryDate ? '. La foto es del ' + nice(entryDate) + ' y se guardará en esa fecha' : ''}. Revisa y pulsa Guardar.`);
     updPreview();
   }
   function chooser(ss) {

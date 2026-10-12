@@ -5,7 +5,7 @@ const DEFAULT_DB = {
   settings: { goalCalories: 2200, apiKey: '', model: '' },
   routine: { 1: { name: 'Pecho y tríceps', exercises: [] }, 2: { name: 'Espalda y bíceps', exercises: [] }, 3: { name: 'Descanso', exercises: [] },
     4: { name: 'Pierna', exercises: [] }, 5: { name: 'Hombro y core', exercises: [] }, 6: { name: 'Descanso', exercises: [] }, 0: { name: 'Descanso', exercises: [] } },
-  workouts: {}, meals: [], wellness: {}, activity: {}, reading: { book: null, log: {}, done: [] },
+  workouts: {}, meals: [], wellness: {}, activity: {}, health: {}, reading: { book: null, log: {}, done: [] },
 };
 const hadData = !!localStorage.getItem(KEY);
 let db;
@@ -64,7 +64,7 @@ $('#date').onchange = (e) => { date = e.target.value || today(); selDay = new Da
 // ---- Tabs ----
 document.querySelectorAll('nav button').forEach((b) => b.onclick = () => {
   document.querySelectorAll('nav button').forEach((x) => x.classList.toggle('active', x === b));
-  for (const t of ['hoy', 'rutina', 'bienestar', 'progreso']) $('#tab-' + t).hidden = t !== b.dataset.tab;
+  for (const t of ['hoy', 'rutina', 'bienestar', 'salud', 'progreso']) $('#tab-' + t).hidden = t !== b.dataset.tab;
   refresh();
 });
 
@@ -569,6 +569,7 @@ async function refresh() {
   if (!$('#tab-hoy').hidden) loadMeals();
   if (!$('#tab-rutina').hidden) loadRoutine();
   if (!$('#tab-bienestar').hidden && window.loadWellness) window.loadWellness();
+  if (!$('#tab-salud').hidden && window.loadSalud) window.loadSalud();
   if (!$('#tab-progreso').hidden) loadProgress();
 }
 

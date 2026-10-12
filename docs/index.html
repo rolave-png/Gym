@@ -79,6 +79,13 @@
     <div class="card" id="readCard"></div>
   </section>
 
+  <section id="tab-salud" hidden>
+    <div class="card" id="hToday"></div>
+    <div class="card" id="hWeek"></div>
+    <div id="hCharts"></div>
+    <p class="muted center"><button class="link" id="hGoals">Cambiar mis metas de sueño y pasos</button></p>
+  </section>
+
   <section id="tab-progreso" hidden>
     <div class="card"><h2>Calorías (últimos días)</h2><div id="chart"></div></div>
     <div class="card" id="actWeeks"></div>
@@ -88,6 +95,7 @@
   <button data-tab="hoy" class="active">🍽️<span>Hoy</span></button>
   <button data-tab="rutina">💪<span>Rutina</span></button>
   <button data-tab="bienestar">🧘<span>Bienestar</span></button>
+  <button data-tab="salud">❤️<span>Salud</span></button>
   <button data-tab="progreso">📈<span>Progreso</span></button>
 </nav>
 <dialog id="dlg"><form method="dialog" id="foodForm">
@@ -154,16 +162,35 @@
   <textarea id="fixText" rows="3" placeholder="Escribe aquí la corrección"></textarea>
   <div class="row" style="margin-top:12px"><button class="btn" value="cancel">Cancelar</button><button class="btn primary" value="ok">Recalcular</button></div>
 </form></dialog>
+<dialog id="hDlg"><form method="dialog" id="hForm">
+  <h2>Datos de salud <small class="muted" id="hDay"></small></h2>
+  <label class="btn photo-btn">📷 Leer capturas de Huawei Health<input type="file" id="hPhoto" accept="image/*" multiple hidden></label>
+  <p class="muted" id="hPhotoMsg" aria-live="polite">Puedes elegir varias capturas a la vez (sueño, pasos, estrés, pulso).</p>
+  <h3>😴 Sueño</h3>
+  <div class="row3"><div><label class="muted">Horas</label><input id="hSleepH" type="number" min="0" max="20" inputmode="numeric"></div><div><label class="muted">Minutos</label><input id="hSleepM" type="number" min="0" max="59" inputmode="numeric"></div><div><label class="muted">Puntuación</label><input id="hScore" type="number" min="0" max="100" inputmode="numeric"></div></div>
+  <div class="row3 two"><div><label class="muted">Profundo (min)</label><input id="hDeep" type="number" min="0" inputmode="numeric"></div><div><label class="muted">REM (min)</label><input id="hRem" type="number" min="0" inputmode="numeric"></div></div>
+  <h3>❤️ Cuerpo</h3>
+  <div class="row3"><div><label class="muted">Pulso reposo</label><input id="hRest" type="number" min="0" inputmode="numeric" placeholder="lpm"></div><div><label class="muted">Estrés</label><input id="hStress" type="number" min="1" max="99" inputmode="numeric" placeholder="1-99"></div><div><label class="muted">Peso (kg)</label><input id="hWeight" type="number" min="0" step="0.1" inputmode="decimal"></div></div>
+  <h3>👟 Actividad</h3>
+  <label class="muted">Pasos del día</label><input id="hSteps" type="number" min="0" inputmode="numeric">
+  <div class="row" style="margin-top:12px"><button class="btn" value="cancel">Cancelar</button><button class="btn primary" value="ok">Guardar</button></div>
+</form></dialog>
+<dialog id="hgDlg"><form method="dialog" id="hgForm">
+  <h2>Mis metas</h2>
+  <label class="muted">Dormir (horas por noche)</label><input id="hgSleep" type="number" min="3" max="14" step="0.5" inputmode="decimal">
+  <label class="muted">Pasos por día</label><input id="hgSteps" type="number" min="1000" max="50000" step="500" inputmode="numeric">
+  <div class="row" style="margin-top:12px"><button class="btn" value="cancel">Cancelar</button><button class="btn primary" value="ok">Guardar</button></div>
+</form></dialog>
 <dialog id="actDlg"><form method="dialog" id="actForm">
   <h2>Registrar ejercicio <small class="muted" id="acDay"></small></h2>
-  <label class="btn photo-btn">📷 Leer de una foto del reloj o de Samsung Health<input type="file" id="acPhoto" accept="image/*" hidden></label>
+  <label class="btn photo-btn">📷 Leer de una foto del reloj o de su app (Huawei Health)<input type="file" id="acPhoto" accept="image/*" hidden></label>
   <p class="muted" id="acPhotoMsg" aria-live="polite"></p>
   <div id="acMulti" hidden></div>
   <label class="muted">Tipo</label>
   <select id="acType"><option value="gym">🏋️ Gimnasio</option><option value="bici">🚴 Bici estática</option><option value="camina">🚶 Caminata o trotadora</option><option value="otro">✨ Otro</option></select>
   <div class="row3 two"><div><label class="muted">Duración (min)</label><input id="acMin" type="number" min="0" inputmode="numeric" placeholder="Ej. 90"></div>
     <div><label class="muted">Calorías (kcal)</label><input id="acKcal" type="number" min="0" inputmode="numeric" placeholder="Ej. 567"></div></div>
-  <label class="opt"><input type="checkbox" id="acTotal" checked> Es el dato «total» de mi reloj o Samsung Health (descontar lo que gasto en reposo)</label>
+  <label class="opt"><input type="checkbox" id="acTotal" checked> Son calorías «totales» (descontar lo que gasto en reposo). Desmárcalo si tu reloj ya muestra solo las activas</label>
   <p class="muted" id="acPrev" aria-live="polite"></p>
   <label class="muted">Nota (opcional)</label><input id="acNote" placeholder="Ej. piernas y espalda">
   <div class="row" style="margin-top:12px"><button class="btn" value="cancel">Cancelar</button><button class="btn primary" value="ok">Guardar</button></div>
@@ -208,6 +235,7 @@
 <script src="plantillas.js"></script>
 <script src="explorar.js"></script>
 <script src="ejercicio.js"></script>
+<script src="salud.js"></script>
 <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{})</script>
 </body>
 </html>
