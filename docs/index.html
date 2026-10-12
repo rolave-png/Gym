@@ -156,6 +156,9 @@
 </form></dialog>
 <dialog id="actDlg"><form method="dialog" id="actForm">
   <h2>Registrar ejercicio <small class="muted" id="acDay"></small></h2>
+  <label class="btn photo-btn">📷 Leer de una foto del reloj o de Samsung Health<input type="file" id="acPhoto" accept="image/*" hidden></label>
+  <p class="muted" id="acPhotoMsg" aria-live="polite"></p>
+  <div id="acMulti" hidden></div>
   <label class="muted">Tipo</label>
   <select id="acType"><option value="gym">🏋️ Gimnasio</option><option value="bici">🚴 Bici estática</option><option value="camina">🚶 Caminata o trotadora</option><option value="otro">✨ Otro</option></select>
   <div class="row3 two"><div><label class="muted">Duración (min)</label><input id="acMin" type="number" min="0" inputmode="numeric" placeholder="Ej. 90"></div>

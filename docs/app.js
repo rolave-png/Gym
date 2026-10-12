@@ -210,12 +210,12 @@ async function listModels() {
 }
 const detectModel = async () => (await listModels())[0];
 
-async function callGemini(model, base64, note, mime = 'image/jpeg') {
+async function callGemini(model, base64, note, mime = 'image/jpeg', prompt = null) {
   return fetchT(`${GEM}models/${encodeURIComponent(model)}:generateContent`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-goog-api-key': db.settings.apiKey },
     body: JSON.stringify({
-      contents: [{ parts: base64 ? [{ inline_data: { mime_type: mime, data: base64 } }, { text: PROMPT + (note ? `\nNota del usuario: ${note}` : '') }] : [{ text: PROMPT_TXT + `\nDescripción del usuario: ${note}` }] }],
+      contents: [{ parts: base64 ? [{ inline_data: { mime_type: mime, data: base64 } }, { text: (prompt || PROMPT) + (note ? `\nNota del usuario: ${note}` : '') }] : [{ text: PROMPT_TXT + `\nDescripción del usuario: ${note}` }] }],
       generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
     }),
   }, 40000);
@@ -224,7 +224,7 @@ async function callGemini(model, base64, note, mime = 'image/jpeg') {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const busy = (s) => s === 429 || s === 500 || s === 503;
 
-async function analyze(base64, note, onStatus = () => {}, mime = 'image/jpeg') {
+async function analyze(base64, note, onStatus = () => {}, mime = 'image/jpeg', prompt = null) {
   let candidates = db.settings.model ? [db.settings.model] : [];
   let r, tried = 0, listed = false;
   for (let i = 0; i < 5; i++) {
@@ -236,7 +236,7 @@ async function analyze(base64, note, onStatus = () => {}, mime = 'image/jpeg') {
     }
     const model = candidates[i];
     for (let attempt = 0; attempt < 3; attempt++) {
-      r = await callGemini(model, base64, note, mime);
+      r = await callGemini(model, base64, note, mime, prompt);
       if (!busy(r.status)) break;
       if (attempt < 2) { onStatus(`⏳ Gemini está saturado, reintentando (${attempt + 1}/2)…`); await sleep(2500 * (attempt + 1)); }
     }
