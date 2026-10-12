@@ -23,6 +23,8 @@
       </div>
     </div>
 
+    <div class="card" id="actCard"></div>
+
     <div class="card">
       <h2>Añadir comida</h2>
       <div class="row">
@@ -79,6 +81,7 @@
 
   <section id="tab-progreso" hidden>
     <div class="card"><h2>Calorías (últimos días)</h2><div id="chart"></div></div>
+    <div class="card" id="actWeeks"></div>
   </section>
 </main>
 <nav>
@@ -151,6 +154,17 @@
   <textarea id="fixText" rows="3" placeholder="Escribe aquí la corrección"></textarea>
   <div class="row" style="margin-top:12px"><button class="btn" value="cancel">Cancelar</button><button class="btn primary" value="ok">Recalcular</button></div>
 </form></dialog>
+<dialog id="actDlg"><form method="dialog" id="actForm">
+  <h2>Registrar ejercicio <small class="muted" id="acDay"></small></h2>
+  <label class="muted">Tipo</label>
+  <select id="acType"><option value="gym">🏋️ Gimnasio</option><option value="bici">🚴 Bici estática</option><option value="camina">🚶 Caminata o trotadora</option><option value="otro">✨ Otro</option></select>
+  <div class="row3 two"><div><label class="muted">Duración (min)</label><input id="acMin" type="number" min="0" inputmode="numeric" placeholder="Ej. 90"></div>
+    <div><label class="muted">Calorías (kcal)</label><input id="acKcal" type="number" min="0" inputmode="numeric" placeholder="Ej. 567"></div></div>
+  <label class="opt"><input type="checkbox" id="acTotal" checked> Es el dato «total» de mi reloj o Samsung Health (descontar lo que gasto en reposo)</label>
+  <p class="muted" id="acPrev" aria-live="polite"></p>
+  <label class="muted">Nota (opcional)</label><input id="acNote" placeholder="Ej. piernas y espalda">
+  <div class="row" style="margin-top:12px"><button class="btn" value="cancel">Cancelar</button><button class="btn primary" value="ok">Guardar</button></div>
+</form></dialog>
 <dialog id="mealDlg"><form method="dialog" id="mdForm">
   <h2>Corregir comida</h2>
   <p class="muted">Si la foto se equivocó, ajusta lo que quieras.</p>
@@ -173,6 +187,8 @@
   <h2>Ajustes</h2>
   <label class="muted">Objetivo diario (kcal)</label>
   <input id="setGoal" type="number" min="500" max="9999">
+  <label class="muted">Ejercicio y meta diaria</label>
+  <select id="setAct"><option value="none">No cambiar mi meta (recomendado)</option><option value="half">Sumar la mitad de lo que quemo</option><option value="all">Sumar todo lo que quemo</option></select>
   <label class="muted">Clave de Gemini (gratis en aistudio.google.com/apikey)</label>
   <input id="setKey" type="password" placeholder="Se guarda solo en este móvil" autocomplete="off">
   <label class="muted">Modelo (déjalo vacío para elegir automáticamente)</label>
@@ -188,6 +204,7 @@
 <script src="bienestar.js"></script>
 <script src="plantillas.js"></script>
 <script src="explorar.js"></script>
+<script src="ejercicio.js"></script>
 <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{})</script>
 </body>
 </html>

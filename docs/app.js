@@ -5,7 +5,7 @@ const DEFAULT_DB = {
   settings: { goalCalories: 2200, apiKey: '', model: '' },
   routine: { 1: { name: 'Pecho y tríceps', exercises: [] }, 2: { name: 'Espalda y bíceps', exercises: [] }, 3: { name: 'Descanso', exercises: [] },
     4: { name: 'Pierna', exercises: [] }, 5: { name: 'Hombro y core', exercises: [] }, 6: { name: 'Descanso', exercises: [] }, 0: { name: 'Descanso', exercises: [] } },
-  workouts: {}, meals: [], wellness: {}, reading: { book: null, log: {}, done: [] },
+  workouts: {}, meals: [], wellness: {}, activity: {}, reading: { book: null, log: {}, done: [] },
 };
 const hadData = !!localStorage.getItem(KEY);
 let db;
@@ -72,7 +72,7 @@ document.querySelectorAll('nav button').forEach((b) => b.onclick = () => {
 async function loadMeals() {
   const meals = db.meals.filter((m) => m.date === date);
   const sum = (k) => meals.reduce((a, m) => a + m[k], 0);
-  const total = sum('calories'), goal = db.settings.goalCalories;
+  const total = sum('calories'), goal = db.settings.goalCalories + (window.goalExtra ? window.goalExtra(date) : 0);
   $('#total').textContent = total; $('#goal').textContent = goal;
   $('#mp').textContent = sum('protein'); $('#mc').textContent = sum('carbs'); $('#mf').textContent = sum('fat');
   $('#arc').style.strokeDashoffset = 326.7 * (1 - Math.min(total / goal, 1));
@@ -89,6 +89,7 @@ async function loadMeals() {
   document.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
     if (confirm('¿Borrar esta comida?')) { db.meals = db.meals.filter((m) => m.id !== b.dataset.del); save(); loadMeals(); }
   });
+  if (window.renderActivity) window.renderActivity();
   document.querySelectorAll('.kcal').forEach((k) => k.onclick = () => openMealEditor(k.dataset.id));
   document.querySelectorAll('[data-edit-meal]').forEach((b) => b.onclick = () => openMealEditor(b.dataset.editMeal));
 }
@@ -389,13 +390,14 @@ $('#freeBtn').onclick = async () => {
 
 // ---- Ajustes, exportar / importar ----
 $('#setBtn').onclick = () => {
-  $('#setGoal').value = db.settings.goalCalories; $('#setKey').value = db.settings.apiKey; $('#setModel').value = db.settings.model;
+  $('#setAct').value = db.settings.actMode || 'none'; $('#setGoal').value = db.settings.goalCalories; $('#setKey').value = db.settings.apiKey; $('#setModel').value = db.settings.model;
   $('#setDlg').showModal();
 };
 $('#setForm').onsubmit = (e) => {
   if (e.submitter?.value !== 'ok') return;
   const g = +$('#setGoal').value;
   if (g > 0) db.settings.goalCalories = Math.round(g);
+  db.settings.actMode = $('#setAct').value;
   db.settings.apiKey = $('#setKey').value.trim();
   db.settings.model = $('#setModel').value.trim();
   save(); refresh(); updateStatus();
@@ -552,6 +554,7 @@ $('#exForm').onsubmit = (e) => {
 
 // ---- Progreso ----
 function loadProgress() {
+  if (window.renderActWeeks) window.renderActWeeks();
   const days = {};
   for (const m of db.meals) days[m.date] = (days[m.date] || 0) + m.calories;
   const h = Object.entries(days).sort().slice(-14).map(([date, calories]) => ({ date, calories }));
