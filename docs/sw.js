@@ -1,5 +1,5 @@
-const CACHE = 'gym-v22';
-const FILES = ['./', 'index.html', 'style.css', 'app.js', 'guia.js', 'alimentos.js', 'bienestar.js', 'plantillas.js', 'explorar.js', 'ejercicio.js', 'salud.js', 'icon.svg', 'manifest.webmanifest'];
+const CACHE = 'gym-v23';
+const FILES = ['./', 'index.html', 'style.css', 'app.js', 'guia.js', 'alimentos.js', 'bienestar.js', 'plantillas.js', 'explorar.js', 'ejercicio.js', 'salud.js', 'hoy.js', 'icon.svg', 'manifest.webmanifest'];
 self.addEventListener('install', (e) => e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting())));
 self.addEventListener('activate', (e) => e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener('fetch', (e) => {

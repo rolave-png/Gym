@@ -185,3 +185,27 @@ textarea{background:#0f172a;border:1px solid var(--line);color:var(--text);borde
 .hcard h2{margin:0 0 4px}.hsum{margin:0}.hsum b{font-size:1.4rem}.hsum small{color:var(--muted)}
 .hchart{width:100%;height:auto;margin-top:6px}.hbar{fill:#22c55e}.hbar.sel{fill:#a3e635}.hnone{fill:#334155}.hgoal{stroke:#f59e0b;stroke-width:1.2;stroke-dasharray:4 3}.hlab{fill:#94a3b8;font-size:9px;text-anchor:middle}
 nav button{padding:8px 4px}
+
+/* Hoy: macros con barras, badge de carbos, simulador y botones rápidos */
+.macros{display:flex;flex-direction:column;gap:10px;flex:1}
+.mrow{display:block}.mtop{display:flex;justify-content:space-between;font-size:.85rem;color:var(--muted)}.mtop b{color:var(--text)}
+.mbar{position:relative;height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:3px}
+.mbar i{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:99px;width:0;transition:width .3s}.mbar i.over{background:#f97316}
+.mbar i.ghost{background:#f59e0b;opacity:.9;border-radius:0}.mbar i.ghost.over{background:#ef4444}
+.ring .fg2{stroke:#f59e0b;stroke-linecap:butt;stroke-dasharray:0 326.7;transition:stroke-dasharray .25s,stroke-dashoffset .25s}
+.ring svg circle.fg2{fill:none;stroke-width:10}
+.ring-text small.amber{color:#f59e0b;font-weight:700;min-height:1em}
+.sumx{margin-top:-4px}
+.cbadge{border-radius:99px;padding:6px 12px;font-size:.82rem;font-weight:700;text-align:center;margin-bottom:8px}
+.cbadge.keto{background:#1e3a5f;color:#7dd3fc}.cbadge.low{background:#14532d;color:#86efac}.cbadge.mod{background:#4a3410;color:#fcd34d}
+.sim summary{cursor:pointer;font-weight:700;padding:10px 12px;background:var(--line);border-radius:10px;list-style:none;text-align:center}
+.sim summary::-webkit-details-marker{display:none}.sim[open] summary{background:#4a3410;color:#fcd34d}
+.simlist{display:flex;flex-direction:column;gap:4px;max-height:34vh;overflow:auto;margin:6px 0}
+.simlist button{background:var(--line);color:var(--text);border:0;border-radius:8px;padding:9px 10px;text-align:left;font:inherit;cursor:pointer}.simlist small{color:var(--muted)}
+.simsl{display:flex;align-items:center;gap:12px}.simsl input{flex:1;accent-color:#f59e0b}.simsl b{min-width:3.2em;text-align:right;color:#fcd34d}
+.simamber{color:#fcd34d}
+.textai{margin-top:8px;display:flex;flex-direction:column;gap:8px}.tbtns{display:flex;gap:8px}.tbtns .primary{flex:1}
+.quick-title{font-size:.75rem;color:var(--muted);margin:12px 0 6px}
+.chips-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}.chips-scroll::-webkit-scrollbar{display:none}
+.chipq{background:#252d3d;border:1px solid #364156;color:var(--text);border-radius:999px;padding:8px 12px;font:inherit;font-size:.82rem;white-space:nowrap;cursor:pointer;flex:none}
+.chipq span{color:#4ade80;font-weight:700;margin-left:3px}.chipq:active{transform:scale(.95);background:var(--accent);color:#052e16}

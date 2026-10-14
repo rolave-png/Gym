@@ -20,6 +20,7 @@ if (db.onboarded === undefined) db.onboarded = hadData; // quien ya usaba la app
 if (!db.lastAdjust) db.lastAdjust = new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
 const uid = () => Math.random().toString(36).slice(2, 10);
 const n0 = (v) => Math.max(0, Math.round(Number(v) || 0));
+const n1 = (v) => Math.max(0, Math.round((Number(v) || 0) * 10) / 10);
 
 // ---- Rutina sugerida (3 días de cuerpo completo + bici), según las máquinas del gimnasio ----
 const G = window.GUIA;
@@ -71,10 +72,10 @@ document.querySelectorAll('nav button').forEach((b) => b.onclick = () => {
 // ---- Comidas ----
 async function loadMeals() {
   const meals = db.meals.filter((m) => m.date === date);
-  const sum = (k) => meals.reduce((a, m) => a + m[k], 0);
+  const sum = (k) => Math.round(meals.reduce((a, m) => a + m[k], 0) * 10) / 10;
   const total = sum('calories'), goal = db.settings.goalCalories + (window.goalExtra ? window.goalExtra(date) : 0);
   $('#total').textContent = total; $('#goal').textContent = goal;
-  $('#mp').textContent = sum('protein'); $('#mc').textContent = sum('carbs'); $('#mf').textContent = sum('fat');
+  if (window.renderMacros) window.renderMacros({ total, goal, p: sum('protein'), c: sum('carbs'), f: sum('fat'), n: meals.length });
   $('#arc').style.strokeDashoffset = 326.7 * (1 - Math.min(total / goal, 1));
   $('#arc').style.stroke = total > goal ? '#f97316' : '';
   $('#meals').innerHTML = meals.map((m) => `
@@ -215,7 +216,7 @@ async function callGemini(model, base64, note, mime = 'image/jpeg', prompt = nul
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-goog-api-key': db.settings.apiKey },
     body: JSON.stringify({
-      contents: [{ parts: base64 ? [{ inline_data: { mime_type: mime, data: base64 } }, { text: (prompt || PROMPT) + (note ? `\nNota del usuario: ${note}` : '') }] : [{ text: PROMPT_TXT + `\nDescripción del usuario: ${note}` }] }],
+      contents: [{ parts: base64 ? [{ inline_data: { mime_type: mime, data: base64 } }, { text: (prompt || PROMPT) + (note ? `\nNota del usuario: ${note}` : '') }] : [{ text: (prompt || PROMPT_TXT) + `\nDescripción del usuario: ${note}` }] }],
       generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
     }),
   }, 40000);
@@ -261,7 +262,7 @@ function addMeal(date, info, photo = null) {
   const meal = {
     id: uid(), date, photo, time: new Date().toTimeString().slice(0, 5),
     name: String(info.name || 'Comida').slice(0, 80),
-    calories: n0(info.calories), protein: n0(info.protein), carbs: n0(info.carbs), fat: n0(info.fat),
+    calories: n0(info.calories), protein: n1(info.protein), carbs: n1(info.carbs), fat: n1(info.fat),
     items: Array.isArray(info.items) ? info.items.slice(0, 15).map((i) => ({ name: String(i.name), calories: n0(i.calories) })) : [],
     notes: String(info.notes || '').slice(0, 200),
   };
@@ -390,6 +391,7 @@ $('#freeBtn').onclick = async () => {
 
 // ---- Ajustes, exportar / importar ----
 $('#setBtn').onclick = () => {
+  $('#setP').value = db.settings.protGoal || 160; $('#setC').value = db.settings.carbGoal || 70; $('#setF').value = db.settings.fatGoal || 85;
   $('#setAct').value = db.settings.actMode || 'none'; $('#setGoal').value = db.settings.goalCalories; $('#setKey').value = db.settings.apiKey; $('#setModel').value = db.settings.model;
   $('#setDlg').showModal();
 };
@@ -398,6 +400,7 @@ $('#setForm').onsubmit = (e) => {
   const g = +$('#setGoal').value;
   if (g > 0) db.settings.goalCalories = Math.round(g);
   db.settings.actMode = $('#setAct').value;
+  for (const [id, k] of [['setP', 'protGoal'], ['setC', 'carbGoal'], ['setF', 'fatGoal']]) { const v = Math.round(Number($('#' + id).value)); if (v > 0 && v < 1000) db.settings[k] = v; }
   db.settings.apiKey = $('#setKey').value.trim();
   db.settings.model = $('#setModel').value.trim();
   save(); refresh(); updateStatus();

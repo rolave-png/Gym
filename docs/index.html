@@ -14,13 +14,27 @@
 <main>
   <section id="tab-hoy">
     <div class="card summary">
-      <div class="ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" class="bg"/><circle id="arc" cx="60" cy="60" r="52" class="fg"/></svg>
-        <div class="ring-text"><b id="total">0</b><small>de <span id="goal">2200</span> kcal</small></div></div>
+      <div class="ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" class="bg"/><circle id="arc2" cx="60" cy="60" r="52" class="fg2"/><circle id="arc" cx="60" cy="60" r="52" class="fg"/></svg>
+        <div class="ring-text"><b id="total">0</b><small>de <span id="goal">2200</span> kcal</small><small id="ringPrev" class="amber"></small></div></div>
       <div class="macros">
-        <div><b id="mp">0</b>g<small>Proteína</small></div>
-        <div><b id="mc">0</b>g<small>Carbs</small></div>
-        <div><b id="mf">0</b>g<small>Grasa</small></div>
+        <div class="mrow"><div class="mtop"><span>Proteína</span><b><span id="mp">0</span> / <span id="mpg">160</span> g</b></div><div class="mbar"><i id="mpb"></i><i class="ghost" id="mpx"></i></div></div>
+        <div class="mrow"><div class="mtop"><span>Carbs</span><b><span id="mc">0</span> / <span id="mcg">70</span> g</b></div><div class="mbar"><i id="mcb"></i><i class="ghost" id="mcx"></i></div></div>
+        <div class="mrow"><div class="mtop"><span>Grasa</span><b><span id="mf">0</span> / <span id="mfg">85</span> g</b></div><div class="mbar"><i id="mfb"></i><i class="ghost" id="mfx"></i></div></div>
       </div>
+    </div>
+    <div class="card sumx">
+      <div id="carbBadge" class="cbadge" hidden></div>
+      <details id="sim" class="sim"><summary>🧪 ¿Me cabe hoy?</summary>
+        <p class="muted">Elige un alimento o antojo y mueve la porción para ver cómo quedaría tu día antes de comerlo.</p>
+        <input id="simQ" placeholder="Busca un alimento: plátano, helado, pan…" autocomplete="off">
+        <div id="simList" class="simlist"></div>
+        <div id="simBox" hidden>
+          <p><b id="simName"></b></p>
+          <div class="simsl"><input type="range" id="simX" min="0.5" max="2.5" step="0.25" value="1"><b id="simXv">1×</b></div>
+          <p id="simInfo" class="simamber"></p>
+          <div class="row"><button class="btn" type="button" id="simCancel">Mejor no</button><button class="btn primary" type="button" id="simOk">✅ Lo como: sumarlo</button></div>
+        </div>
+      </details>
     </div>
 
     <div class="card" id="actCard"></div>
@@ -31,7 +45,12 @@
         <label class="btn primary">📷 Hacer / subir foto<input type="file" id="photo" accept="image/*" hidden></label>
         <button class="btn" id="searchBtn">🔎 Buscar alimento</button>
       </div>
-      <input id="note" placeholder="Nota opcional (ej. 'ración grande', 'sin aceite')">
+      <div class="textai">
+        <textarea id="note" rows="2" placeholder="Escribe o dicta lo que comiste (ej. «café con proteína, 4 huevos, pollo, atún») o una nota para la foto"></textarea>
+        <div class="tbtns"><button type="button" class="btn" id="micBtn" hidden title="Dictar con la voz">🎤</button><button type="button" class="btn primary" id="aiText">⚡ Analizar texto con IA</button></div>
+      </div>
+      <div class="quick-title">⚡ Añadir rápido en 1 toque</div>
+      <div id="chips" class="chips-scroll"></div>
       <p id="status" class="muted"></p>
     </div>
 
@@ -217,6 +236,8 @@
   <h2>Ajustes</h2>
   <label class="muted">Objetivo diario (kcal)</label>
   <input id="setGoal" type="number" min="500" max="9999">
+  <label class="muted">Metas de macros por día (g): proteína, carbos, grasa</label>
+  <div class="row3"><input id="setP" type="number" min="1" inputmode="numeric" aria-label="Proteína"><input id="setC" type="number" min="1" inputmode="numeric" aria-label="Carbohidratos"><input id="setF" type="number" min="1" inputmode="numeric" aria-label="Grasa"></div>
   <label class="muted">Ejercicio y meta diaria</label>
   <select id="setAct"><option value="none">No cambiar mi meta (recomendado)</option><option value="half">Sumar la mitad de lo que quemo</option><option value="all">Sumar todo lo que quemo</option></select>
   <label class="muted">Clave de Gemini (gratis en aistudio.google.com/apikey)</label>
@@ -236,6 +257,7 @@
 <script src="explorar.js"></script>
 <script src="ejercicio.js"></script>
 <script src="salud.js"></script>
+<script src="hoy.js"></script>
 <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{})</script>
 </body>
 </html>
