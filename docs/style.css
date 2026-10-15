@@ -209,3 +209,4 @@ nav button{padding:8px 4px}
 .chips-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}.chips-scroll::-webkit-scrollbar{display:none}
 .chipq{background:#252d3d;border:1px solid #364156;color:var(--text);border-radius:999px;padding:8px 12px;font:inherit;font-size:.82rem;white-space:nowrap;cursor:pointer;flex:none}
 .chipq span{color:#4ade80;font-weight:700;margin-left:3px}.chipq:active{transform:scale(.95);background:var(--accent);color:#052e16}
+.macros .mrow{display:block}.macros .mtop{display:flex;justify-content:space-between;gap:6px;align-items:baseline}.macros .mbar{display:block;width:100%}
