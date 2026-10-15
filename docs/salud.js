@@ -19,6 +19,7 @@
     { k: 'hrRest', name: 'Pulso en reposo', icon: '❤️', val: (d) => d.hrRest || null, show: (v) => `${Math.round(v)} lpm`, diff: (x) => `${Math.abs(Math.round(x))} lpm`, good: 'down', eps: 1 },
     { k: 'stress', name: 'Estrés', icon: '🧠', val: (d) => d.stress || null, show: (v) => `${Math.round(v)}`, diff: (x) => `${Math.abs(Math.round(x))}`, good: 'down', eps: 2,
       status: (a) => (a <= 45 ? 'ok' : a <= 59 ? 'mid' : 'bad'), goalText: () => 'bajo es mejor (1 a 99)' },
+    { k: 'moveKcal', name: 'Movimiento (kcal activas)', icon: '🔥', val: (d) => d.moveKcal || null, show: (v) => `${nf(v)} kcal`, diff: (x) => `${nf(Math.abs(x))} kcal`, good: 'up' },
     { k: 'weight', name: 'Peso', icon: '⚖️', val: (d) => d.weight || null, show: (v) => `${v.toFixed(1).replace('.', ',')} kg`, diff: (x) => `${Math.abs(x).toFixed(1).replace('.', ',')} kg`, good: 'none', eps: 0.2 },
   ];
 
@@ -47,9 +48,15 @@
         ${tile('❤️', 'Pulso reposo', d.hrRest ? `${d.hrRest} lpm` : '—', '')}
         ${tile('🧠', 'Estrés', d.stress ? d.stress : '—', d.stress ? (d.stress <= 29 ? 'relajado' : d.stress <= 59 ? 'normal' : d.stress <= 79 ? 'medio' : 'alto') : '')}
         ${d.weight ? tile('⚖️', 'Peso', `${String(d.weight).replace('.', ',')} kg`, '') : ''}
+        ${d.moveKcal ? tile('🔥', 'Movimiento', `${nf(d.moveKcal)} kcal`, 'calorías activas') : ''}
+        ${d.exMin ? tile('🏃', 'Ejercicio', `${d.exMin} min`, '') : ''}
+        ${d.standH ? tile('🧍', 'De pie', `${d.standH} h`, '') : ''}
+        ${d.spo2 ? tile('🫁', 'Oxígeno (SpO₂)', `${d.spo2}%`, '') : ''}
+        ${d.hr ? tile('💓', 'Pulso (última medición)', `${d.hr} lpm`, '') : ''}
       </div>
-      <div class="hbtns"><button class="btn primary" data-h="add">📷 Cargar datos del día</button></div>
-      <p class="muted center">Toma una captura de la app Huawei Health (o escribe los datos).</p>`;
+      <div class="hbtns"><label class="btn primary">📷 Subir captura de Huawei Health<input type="file" id="hQuick" accept="image/*" multiple hidden></label></div>
+      <p id="hQuickMsg" class="muted center" aria-live="polite">Se lee y se guarda sola. Puedes subir varias capturas a la vez.</p>
+      <p class="center"><button class="link" data-h="add">✍️ Escribir o corregir a mano</button></p>`;
   }
 
   // ---------- Balance de la semana ----------
@@ -162,10 +169,9 @@ Reglas:
   }
   function save_(ev) {
     if (ev.submitter?.value !== 'ok') return;
-    const h = pos(q('#hSleepH').value) || 0, m = pos(q('#hSleepM').value) || 0, rec = {};
-    if (h || m) rec.sleepMin = Math.round(h * 60 + m);
-    for (const [id, key] of Object.entries(FIELDS)) { if (!key) continue; const v = pos(q('#' + id).value); if (v != null) rec[key] = v; }
-    const d = entryDate || date;
+    const d = entryDate || date, h = pos(q('#hSleepH').value) || 0, m = pos(q('#hSleepM').value) || 0, rec = { ...(H()[d] || {}) };
+    if (h || m) rec.sleepMin = Math.round(h * 60 + m); else delete rec.sleepMin;
+    for (const [id, key] of Object.entries(FIELDS)) { if (!key) continue; const v = pos(q('#' + id).value); if (v != null) rec[key] = v; else delete rec[key]; }
     if (Object.keys(rec).length) H()[d] = rec; else delete H()[d];
     save(); if (d !== date) { date = d; q('#date').value = d; }
     load(); if (window.loadMeals) loadMeals();
@@ -184,5 +190,52 @@ Reglas:
     if (s >= 3 && s <= 14) db.settings.sleepGoal = s; if (st >= 1000 && st <= 50000) db.settings.stepsGoal = Math.round(st);
     save(); load();
   });
+
+  // ---- Subir captura y guardar al instante (con "Deshacer") ----
+  const SK = { sleep_minutes: 'sleepMin', sleep_score: 'sleepScore', deep_minutes: 'deepMin', rem_minutes: 'remMin', hr_rest: 'hrRest', hr_last: 'hr', stress: 'stress', spo2: 'spo2', steps: 'steps', weight_kg: 'weight', move_kcal: 'moveKcal', exercise_minutes: 'exMin', stand_hours: 'standH' };
+  const SL = { sleepMin: 'sueño', sleepScore: 'puntuación de sueño', deepMin: 'sueño profundo', remMin: 'sueño REM', hrRest: 'pulso en reposo', hr: 'pulso', stress: 'estrés', spo2: 'oxígeno', steps: 'pasos', weight: 'peso', moveKcal: 'movimiento', exMin: 'ejercicio', standH: 'horas de pie' };
+  const HEALTH_PROMPT2 = () => `Eres un asistente que lee capturas de la app Huawei Health (Salud de Huawei). Hoy es ${today()}.
+Extrae SOLO los datos que se vean claramente. Responde SOLO con JSON válido y sin texto adicional:
+{"metrics": {"sleep_minutes": {"v": entero o null, "d": fecha}, "sleep_score": {...}, "deep_minutes": {...}, "rem_minutes": {...}, "hr_rest": {...}, "hr_last": {...}, "stress": {...}, "spo2": {...}, "steps": {...}, "weight_kg": {...}, "move_kcal": {...}, "exercise_minutes": {...}, "stand_hours": {...}}, "steps_goal": entero o null, "error": null}
+Cada métrica tiene "v" (el número) y "d" (la fecha a la que pertenece). Reglas:
+- "d": "AAAA-MM-DD" si la tarjeta muestra una fecha (por ejemplo 14/10; usa el año de hoy); "hoy" si dice "de hoy" o es el dato del día actual; null si no se sabe.
+- sleep_minutes: tiempo total dormido en minutos (6 h 53 min = 413). sleep_score: puntuación 0 a 100 si se ve.
+- hr_rest: SOLO si dice pulso o frecuencia cardíaca EN REPOSO. hr_last: la frecuencia cardíaca que muestra la tarjeta "Corazón" (lpm o p. p. m.) cuando no dice reposo.
+- stress: nivel de estrés (1 a 99). spo2: oxígeno en sangre (%). weight_kg: peso en kg (96.4 es 96.4).
+- steps: pasos del día (11,811 es 11811). steps_goal: la meta de pasos si se ve (15,000 es 15000).
+- move_kcal: "Movimiento" en kcal (calorías activas del día). exercise_minutes: minutos de "Ejercicio". stand_hours: horas de "Estar de pie".
+- Lo que no se vea es {"v": null, "d": null}. No inventes números. Si no es Huawei Health ni una pantalla de salud, responde {"metrics": {}, "error": "No veo datos de salud en la imagen"}.`;
+
+  async function quickImport(files) {
+    const msg = q('#hQuickMsg'); if (!msg) return;
+    if (!db.settings.apiKey) { msg.textContent = '⚠️ Para leer capturas pon tu clave de Gemini en ⚙️ Ajustes.'; return; }
+    const changes = []; let goal = null, lastErr = '';
+    for (let i = 0; i < files.length; i++) {
+      msg.textContent = `📷 Leyendo la captura ${i + 1} de ${files.length}…`;
+      try {
+        let full, mime = 'image/jpeg';
+        try { full = (await resizeImage(files[i], 1600)).split(',')[1]; } catch { const raw = await readRaw(files[i]); full = raw.data; mime = raw.mime; }
+        const info = await analyze(full, '', (t) => { msg.textContent = t; }, mime, HEALTH_PROMPT2());
+        const m = info.metrics || {}; let n = 0;
+        for (const [k, key] of Object.entries(SK)) {
+          const x = m[k]; if (!x || x.v == null) continue; const v = Number(String(x.v).replace(',', '.')); if (!Number.isFinite(v) || v <= 0) continue;
+          let d = x.d === 'hoy' ? today() : /^\d{4}-\d{2}-\d{2}$/.test(x.d || '') && x.d <= fmtD(new Date(Date.now() + 864e5)) ? x.d : date;
+          changes.push({ d, key, v: Math.round(v * 10) / 10 }); n++;
+        }
+        if (Number(info.steps_goal) >= 1000) goal = Math.round(Number(info.steps_goal));
+        if (!n) lastErr = info.error || 'No encontré datos de salud en la captura ' + (i + 1) + '.';
+      } catch (err) { lastErr = errMsg(err); break; }
+    }
+    if (!changes.length) { msg.textContent = '⚠️ ' + (lastErr || 'No pude leer datos en esa captura.'); return; }
+    const prev = [], seen = {};
+    for (const c of changes) { const old = (H()[c.d] || {})[c.key]; prev.push({ ...c, old }); (H()[c.d] = H()[c.d] || {})[c.key] = c.v; seen[c.key] = c; }
+    let goalSet = false; if (goal && !db.settings.stepsGoal) { db.settings.stepsGoal = goal; goalSet = true; }
+    save(); load();
+    const names = Object.values(seen).map((c) => `${SL[c.key]} ${c.key === 'sleepMin' ? hm(c.v) : String(c.v).replace('.', ',')}${c.d !== date ? ' (' + nice(c.d) + ')' : ''}`);
+    const box = q('#hQuickMsg'); box.innerHTML = `✅ Guardé: ${names.join(', ')}.${goalSet ? ` Usé tu meta de ${nf(goal)} pasos.` : ''} <button class="link" id="hUndo">Deshacer</button>${lastErr ? `<br>⚠️ ${lastErr}` : ''}`;
+    q('#hUndo').onclick = () => { for (const p of prev.reverse()) { const r = H()[p.d] || {}; if (p.old == null) delete r[p.key]; else r[p.key] = p.old; if (!Object.keys(r).length) delete H()[p.d]; } if (goalSet) delete db.settings.stepsGoal; save(); load(); q('#hQuickMsg').textContent = '↩️ Deshice los cambios de esa captura.'; };
+  }
+  document.addEventListener('change', (e) => { if (e.target.id === 'hQuick') { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) quickImport(fs); } });
+
   window.loadSalud = load;
 })();
